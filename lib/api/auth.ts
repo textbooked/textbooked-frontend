@@ -7,7 +7,7 @@ type ApiEnvelope<T> = {
 };
 
 export type CurrentUser = {
-  id: number;
+  id: string;
   email: string;
   name: string | null;
   image: string | null;

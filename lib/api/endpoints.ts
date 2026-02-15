@@ -26,6 +26,7 @@ import type {
   TocTreeResponse,
 } from "@/lib/api/models";
 import { ApiError, isApiError } from "@/lib/api/request";
+import { isUuid } from "@/lib/utils/uuid";
 
 type ApiEnvelope<T> = {
   data: T;
@@ -34,8 +35,8 @@ type ApiEnvelope<T> = {
 };
 
 const KNOWN_BOOK_IDS_STORAGE_KEY = "textbooked.knownBookIds";
-const attemptsByQuestion = new Map<number, Attempt[]>();
-const questionIdByAttemptId = new Map<number, number>();
+const attemptsByQuestion = new Map<string, Attempt[]>();
+const questionIdByAttemptId = new Map<string, string>();
 
 function getData<T>(response: unknown): T {
   return (response as ApiEnvelope<T>).data;
@@ -93,7 +94,7 @@ export async function createBook(input: {
   return createdBook;
 }
 
-export async function getBook(bookId: number): Promise<BookDetail> {
+export async function getBook(bookId: string): Promise<BookDetail> {
   const response = await booksControllerGetById(bookId);
   const book = getData<BookDetail>(response);
   rememberBookId(book.id);
@@ -101,13 +102,13 @@ export async function getBook(bookId: number): Promise<BookDetail> {
   return book;
 }
 
-export async function getBookToc(bookId: number): Promise<TocTreeResponse> {
+export async function getBookToc(bookId: string): Promise<TocTreeResponse> {
   const response = await tocControllerGetByBook(bookId);
   return getData<TocTreeResponse>(response);
 }
 
 export async function uploadBookToc(
-  bookId: number,
+  bookId: string,
   tocText: string,
 ): Promise<TocTreeResponse> {
   const response = await tocControllerUpload(bookId, { tocText });
@@ -115,15 +116,15 @@ export async function uploadBookToc(
 }
 
 export async function generatePaces(
-  bookId: number,
+  bookId: string,
 ): Promise<PaceGenerationResponse> {
   const response = await pacesControllerGenerate(bookId);
   return getData<PaceGenerationResponse>(response);
 }
 
 export async function createPlan(
-  bookId: number,
-  input: { paceOptionId: number; startDate: string },
+  bookId: string,
+  input: { paceOptionId: string; startDate: string },
 ): Promise<PlanDetail> {
   const response = await plansControllerCreate(bookId, {
     paceOptionId: input.paceOptionId,
@@ -133,13 +134,13 @@ export async function createPlan(
   return getData<PlanDetail>(response);
 }
 
-export async function getPlan(planId: number): Promise<PlanDetail> {
+export async function getPlan(planId: string): Promise<PlanDetail> {
   const response = await plansControllerGetById(planId);
   return getData<PlanDetail>(response);
 }
 
 export async function updatePlanItemStatus(
-  planItemId: number,
+  planItemId: string,
   status: PlanItemStatus,
 ): Promise<PlanItem> {
   const response = await apiFetch<ApiEnvelope<PlanItem>>(
@@ -157,8 +158,8 @@ export async function updatePlanItemStatus(
 }
 
 export async function getTocNode(
-  nodeId: number,
-  bookId?: number,
+  nodeId: string,
+  bookId?: string,
 ): Promise<TocNodeDetail> {
   try {
     const response = await apiFetch<ApiEnvelope<TocNodeDetail>>(`/toc/${nodeId}`, {
@@ -171,7 +172,7 @@ export async function getTocNode(
       throw error;
     }
 
-    if (!Number.isFinite(bookId) || !bookId || bookId <= 0) {
+    if (!bookId || !isUuid(bookId)) {
       throw new ApiError(
         "This backend does not expose GET /toc/:nodeId. Open this node from a book/plan link so bookId is known.",
         404,
@@ -209,7 +210,7 @@ export async function getTocNode(
 }
 
 export async function getLatestAssignment(
-  nodeId: number,
+  nodeId: string,
 ): Promise<Assignment | null> {
   try {
     const response = await assignmentsControllerGetLatest(nodeId);
@@ -223,13 +224,13 @@ export async function getLatestAssignment(
   }
 }
 
-export async function generateAssignment(nodeId: number): Promise<Assignment> {
+export async function generateAssignment(nodeId: string): Promise<Assignment> {
   const response = await assignmentsControllerGenerate(nodeId);
   return getData<Assignment>(response);
 }
 
 export async function createAttempt(
-  questionId: number,
+  questionId: string,
   answerText: string,
 ): Promise<Attempt> {
   const response = await attemptsControllerCreate(questionId, {
@@ -248,7 +249,7 @@ export async function createAttempt(
   };
 }
 
-export async function listAttempts(questionId: number): Promise<Attempt[]> {
+export async function listAttempts(questionId: string): Promise<Attempt[]> {
   try {
     const response = await apiFetch<ApiEnvelope<Attempt[]>>(
       `/questions/${questionId}/attempts`,
@@ -269,7 +270,7 @@ export async function listAttempts(questionId: number): Promise<Attempt[]> {
   }
 }
 
-export async function gradeAttempt(attemptId: number): Promise<Attempt> {
+export async function gradeAttempt(attemptId: string): Promise<Attempt> {
   const response = await attemptsControllerGrade(attemptId);
   const attempt = getData<Attempt>(response);
 
@@ -278,7 +279,7 @@ export async function gradeAttempt(attemptId: number): Promise<Attempt> {
   return attempt;
 }
 
-function rememberBookId(bookId: number): void {
+function rememberBookId(bookId: string): void {
   if (typeof window === "undefined") {
     return;
   }
@@ -290,7 +291,7 @@ function rememberBookId(bookId: number): void {
   }
 }
 
-function rememberBookIds(bookIds: number[]): void {
+function rememberBookIds(bookIds: string[]): void {
   if (typeof window === "undefined") {
     return;
   }
@@ -299,7 +300,7 @@ function rememberBookIds(bookIds: number[]): void {
   writeRememberedBookIds([...uniqueIds]);
 }
 
-function getRememberedBookIds(): number[] {
+function getRememberedBookIds(): string[] {
   if (typeof window === "undefined") {
     return [];
   }
@@ -315,15 +316,13 @@ function getRememberedBookIds(): number[] {
       return [];
     }
 
-    return parsed
-      .map((value) => Number(value))
-      .filter((value) => Number.isFinite(value) && value > 0);
+    return parsed.filter(isUuid);
   } catch {
     return [];
   }
 }
 
-function writeRememberedBookIds(bookIds: number[]): void {
+function writeRememberedBookIds(bookIds: string[]): void {
   if (typeof window === "undefined") {
     return;
   }
@@ -336,7 +335,7 @@ function writeRememberedBookIds(bookIds: number[]): void {
 
 function findNodeWithParents(
   nodes: TocTreeNode[],
-  targetNodeId: number,
+  targetNodeId: string,
   parents: TocTreeNode[],
 ): { node: TocTreeNode; parents: TocTreeNode[] } | null {
   for (const node of nodes) {
@@ -360,18 +359,18 @@ function findNodeWithParents(
   return null;
 }
 
-function getCachedAttempts(questionId: number): Attempt[] {
+function getCachedAttempts(questionId: string): Attempt[] {
   return [...(attemptsByQuestion.get(questionId) ?? [])];
 }
 
-function setAttemptsForQuestion(questionId: number, attempts: Attempt[]): void {
+function setAttemptsForQuestion(questionId: string, attempts: Attempt[]): void {
   attemptsByQuestion.set(questionId, attempts);
   for (const attempt of attempts) {
     questionIdByAttemptId.set(attempt.id, questionId);
   }
 }
 
-function cacheAttempt(questionId: number, attempt: Attempt): void {
+function cacheAttempt(questionId: string, attempt: Attempt): void {
   const existing = attemptsByQuestion.get(questionId) ?? [];
   const alreadyStored = existing.some((item) => item.id === attempt.id);
 
@@ -384,7 +383,7 @@ function cacheAttempt(questionId: number, attempt: Attempt): void {
 
 function updateCachedAttempt(attempt: Attempt): void {
   const questionId = questionIdByAttemptId.get(attempt.id) ?? attempt.questionId;
-  if (!Number.isFinite(questionId) || !questionId || questionId <= 0) {
+  if (!isUuid(questionId)) {
     return;
   }
 

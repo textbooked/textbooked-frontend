@@ -30,18 +30,19 @@ import type {
   TocTreeResponse,
 } from "@/lib/api/models";
 import { todayIsoDate } from "@/lib/utils/date";
+import { parseRequiredUuid } from "@/lib/utils/uuid";
 
 export default function BookOverviewPage() {
   const params = useParams<{ id: string }>();
-  const bookId = useMemo(() => Number(params.id), [params.id]);
+  const bookId = useMemo(() => parseRequiredUuid(params.id), [params.id]);
 
   const [book, setBook] = useState<BookDetail | null>(null);
   const [toc, setToc] = useState<TocTreeResponse | null>(null);
   const [tocInput, setTocInput] = useState("");
   const [paceOptions, setPaceOptions] = useState<PaceOption[]>([]);
-  const [selectedPaceId, setSelectedPaceId] = useState<number | null>(null);
+  const [selectedPaceId, setSelectedPaceId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(todayIsoDate());
-  const [createdPlanId, setCreatedPlanId] = useState<number | null>(null);
+  const [createdPlanId, setCreatedPlanId] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +51,7 @@ export default function BookOverviewPage() {
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
 
   const loadBookState = useCallback(async () => {
-    if (!Number.isFinite(bookId) || bookId <= 0) {
+    if (!bookId) {
       setError("Invalid book id.");
       setIsLoading(false);
       return;
@@ -77,6 +78,11 @@ export default function BookOverviewPage() {
   }, [loadBookState]);
 
   async function onUploadToc() {
+    if (!bookId) {
+      toast.error("Invalid book id.");
+      return;
+    }
+
     if (!tocInput.trim()) {
       toast.error("Paste ToC text before uploading.");
       return;
@@ -99,6 +105,11 @@ export default function BookOverviewPage() {
   }
 
   async function onGeneratePaces() {
+    if (!bookId) {
+      toast.error("Invalid book id.");
+      return;
+    }
+
     setIsGeneratingPaces(true);
     setCreatedPlanId(null);
 
@@ -116,6 +127,11 @@ export default function BookOverviewPage() {
   }
 
   async function onCreatePlan() {
+    if (!bookId) {
+      toast.error("Invalid book id.");
+      return;
+    }
+
     if (!selectedPaceId) {
       toast.error("Select a pace option first.");
       return;
@@ -209,7 +225,7 @@ export default function BookOverviewPage() {
             </CardHeader>
             <CardContent>
               {toc && toc.nodes.length > 0 ? (
-                <TocTree nodes={toc.nodes} linkToNodes bookId={bookId} />
+                <TocTree nodes={toc.nodes} linkToNodes bookId={bookId ?? undefined} />
               ) : (
                 <EmptyState
                   title="No ToC yet"

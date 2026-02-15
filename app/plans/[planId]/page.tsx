@@ -17,18 +17,19 @@ import { getPlan, updatePlanItemStatus } from "@/lib/api/endpoints";
 import type { PlanDetail, PlanItem, PlanItemStatus } from "@/lib/api/models";
 import { isApiError } from "@/lib/api/request";
 import { formatDate, groupPlanItemsByWeek } from "@/lib/utils/date";
+import { parseRequiredUuid } from "@/lib/utils/uuid";
 
 export default function PlanPage() {
   const params = useParams<{ planId: string }>();
-  const planId = useMemo(() => Number(params.planId), [params.planId]);
+  const planId = useMemo(() => parseRequiredUuid(params.planId), [params.planId]);
 
   const [plan, setPlan] = useState<PlanDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [updatingItemId, setUpdatingItemId] = useState<number | null>(null);
+  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
 
   const loadPlan = useCallback(async () => {
-    if (!Number.isFinite(planId) || planId <= 0) {
+    if (!planId) {
       setError("Invalid plan id.");
       setIsLoading(false);
       return;

@@ -11,7 +11,7 @@ import type { TocTreeNode } from "@/lib/api/models";
 type TocTreeProps = {
   nodes: TocTreeNode[];
   linkToNodes?: boolean;
-  bookId?: number;
+  bookId?: string;
   className?: string;
 };
 
@@ -25,9 +25,9 @@ export function TocTree({
     () => new Set(nodes.map((node) => node.id)),
     [nodes],
   );
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(initiallyExpanded);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(initiallyExpanded);
 
-  function toggle(nodeId: number) {
+  function toggle(nodeId: string) {
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(nodeId)) {
@@ -66,10 +66,10 @@ export function TocTree({
 
 type TocNodeRowProps = {
   node: TocTreeNode;
-  expandedIds: Set<number>;
-  onToggle: (nodeId: number) => void;
+  expandedIds: Set<string>;
+  onToggle: (nodeId: string) => void;
   linkToNodes: boolean;
-  bookId?: number;
+  bookId?: string;
 };
 
 function TocNodeRow({
@@ -81,10 +81,7 @@ function TocNodeRow({
 }: TocNodeRowProps) {
   const hasChildren = node.children.length > 0;
   const isExpanded = expandedIds.has(node.id);
-  const nodeHref =
-    Number.isFinite(bookId) && bookId && bookId > 0
-      ? `/toc/${node.id}?bookId=${bookId}`
-      : `/toc/${node.id}`;
+  const nodeHref = bookId ? `/toc/${node.id}?bookId=${bookId}` : `/toc/${node.id}`;
 
   return (
     <div>

@@ -3,7 +3,7 @@ export type PlanItemType = "READ" | "ASSIGNMENT" | "TEST" | "REVIEW";
 export type PlanItemStatus = "TODO" | "DONE";
 
 export type BookSummary = {
-  id: number;
+  id: string;
   title: string;
   author: string;
   coverUrl: string | null;
@@ -19,8 +19,8 @@ export type BookDetail = BookSummary & {
 };
 
 export type TocTreeNode = {
-  id: number;
-  parentId: number | null;
+  id: string;
+  parentId: string | null;
   title: string;
   order: number;
   depth: number;
@@ -29,34 +29,34 @@ export type TocTreeNode = {
 };
 
 export type TocTreeResponse = {
-  bookId: number;
+  bookId: string;
   totalNodes: number;
   nodes: TocTreeNode[];
 };
 
 export type TocNodeBreadcrumb = {
-  id: number;
+  id: string;
   title: string;
 };
 
 export type TocNodeDetail = {
   node: {
-    id: number;
-    parentId: number | null;
+    id: string;
+    parentId: string | null;
     title: string;
     order: number;
     depth: number;
   };
   parents: TocNodeBreadcrumb[];
   book: {
-    id: number;
+    id: string;
     title: string;
   };
 };
 
 export type PaceOption = {
-  id: number;
-  bookId: number;
+  id: string;
+  bookId: string;
   name: string;
   sessionsPerWeek: number;
   minutesPerSession: number;
@@ -64,21 +64,21 @@ export type PaceOption = {
 };
 
 export type PaceGenerationResponse = {
-  bookId: number;
+  bookId: string;
   promptVersion?: string;
   options: PaceOption[];
 };
 
 export type PlanItem = {
-  id: number;
-  planId: number;
+  id: string;
+  planId: string;
   date: string;
-  tocNodeId: number;
+  tocNodeId: string;
   type: PlanItemType;
   status: PlanItemStatus;
   createdAt: string;
   tocNode: {
-    id: number;
+    id: string;
     title: string;
     depth: number;
     order: number;
@@ -92,9 +92,9 @@ export type PlanProgress = {
 };
 
 export type PlanDetail = {
-  id: number;
-  bookId: number;
-  paceOptionId: number;
+  id: string;
+  bookId: string;
+  paceOptionId: string;
   startDate: string;
   createdAt: string;
   book: BookSummary;
@@ -104,8 +104,8 @@ export type PlanDetail = {
 };
 
 export type AssignmentQuestion = {
-  id: number;
-  assignmentId: number;
+  id: string;
+  assignmentId: string;
   type: string;
   prompt: string;
   rubricJson?: string;
@@ -114,12 +114,12 @@ export type AssignmentQuestion = {
 };
 
 export type Assignment = {
-  id: number;
-  tocNodeId: number;
+  id: string;
+  tocNodeId: string;
   version: number;
   createdAt: string;
   tocNode: {
-    id: number;
+    id: string;
     title: string;
     depth: number;
     order: number;
@@ -135,8 +135,8 @@ export type AttemptFeedback = {
 };
 
 export type Attempt = {
-  id: number;
-  questionId: number;
+  id: string;
+  questionId: string;
   answerText: string;
   score: number | null;
   feedbackJson?: string | null;

@@ -28,29 +28,28 @@ import type {
   TocNodeDetail,
 } from "@/lib/api/models";
 import { formatDateTime } from "@/lib/utils/date";
+import { parseOptionalUuid, parseRequiredUuid } from "@/lib/utils/uuid";
 
-type AttemptsByQuestion = Record<number, Attempt[]>;
+type AttemptsByQuestion = Record<string, Attempt[]>;
 
 export default function TocNodePage() {
   const params = useParams<{ nodeId: string }>();
   const searchParams = useSearchParams();
-  const nodeId = useMemo(() => Number(params.nodeId), [params.nodeId]);
+  const nodeId = useMemo(() => parseRequiredUuid(params.nodeId), [params.nodeId]);
   const bookIdFromQuery = useMemo(() => {
-    const rawBookId = searchParams.get("bookId");
-    const parsedBookId = Number(rawBookId);
-    return Number.isFinite(parsedBookId) && parsedBookId > 0 ? parsedBookId : null;
+    return parseOptionalUuid(searchParams.get("bookId"));
   }, [searchParams]);
 
   const [nodeDetail, setNodeDetail] = useState<TocNodeDetail | null>(null);
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [attemptsByQuestion, setAttemptsByQuestion] = useState<AttemptsByQuestion>({});
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isGeneratingAssignment, setIsGeneratingAssignment] = useState(false);
-  const [submittingQuestionId, setSubmittingQuestionId] = useState<number | null>(null);
-  const [gradingAttemptId, setGradingAttemptId] = useState<number | null>(null);
+  const [submittingQuestionId, setSubmittingQuestionId] = useState<string | null>(null);
+  const [gradingAttemptId, setGradingAttemptId] = useState<string | null>(null);
 
   const hydrateAttempts = useCallback(async (questions: Assignment["questions"]) => {
     const entries = await Promise.all(
@@ -68,7 +67,7 @@ export default function TocNodePage() {
   }, []);
 
   const loadPage = useCallback(async () => {
-    if (!Number.isFinite(nodeId) || nodeId <= 0) {
+    if (!nodeId) {
       setError("Invalid ToC node id.");
       setIsLoading(false);
       return;
@@ -105,6 +104,11 @@ export default function TocNodePage() {
   }, [loadPage]);
 
   async function onGenerateAssignment() {
+    if (!nodeId) {
+      toast.error("Invalid ToC node id.");
+      return;
+    }
+
     setIsGeneratingAssignment(true);
 
     try {
@@ -121,7 +125,7 @@ export default function TocNodePage() {
     }
   }
 
-  async function onSubmitAnswer(questionId: number) {
+  async function onSubmitAnswer(questionId: string) {
     const answerText = answers[questionId]?.trim() ?? "";
     if (!answerText) {
       toast.error("Write an answer before submitting.");
@@ -147,7 +151,7 @@ export default function TocNodePage() {
     }
   }
 
-  async function onGrade(questionId: number, attemptId: number) {
+  async function onGrade(questionId: string, attemptId: string) {
     setGradingAttemptId(attemptId);
 
     try {
@@ -191,7 +195,7 @@ export default function TocNodePage() {
     ...nodeDetail.parents,
     { id: nodeDetail.node.id, title: nodeDetail.node.title },
   ];
-  const breadcrumbHref = (targetNodeId: number) =>
+  const breadcrumbHref = (targetNodeId: string) =>
     `/toc/${targetNodeId}?bookId=${nodeDetail.book.id}`;
 
   return (
