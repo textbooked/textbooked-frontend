@@ -6,6 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './assignmentsControllerGetLatest202';
+export * from './assignmentsControllerGetLatest202AssignmentGeneration';
+export * from './assignmentsControllerGetLatest202AssignmentGenerationStatus';
+export * from './assignmentsControllerGetLatest202SectionStatus';
 export * from './createAttemptDto';
 export * from './createBookDto';
 export * from './createPlanDto';
@@ -19,6 +23,8 @@ export * from './intakeControllerAnalyze200';
 export * from './intakeControllerAnalyze200TocPageRange';
 export * from './intakeControllerAnalyzeBody';
 export * from './intakeControllerFinalize200';
+export * from './intakeControllerFinalize200AssignmentGeneration';
+export * from './intakeControllerFinalize200AssignmentGenerationStatus';
 export * from './intakeControllerFinalize200Book';
 export * from './intakeControllerFinalize200PaceSummary';
 export * from './intakeControllerFinalize200TocSummary';

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
+  AssignmentsControllerGetLatest202,
   CreateAttemptDto,
   CreateBookDto,
   CreatePlanDto,
@@ -385,6 +386,126 @@ export const pacesControllerGenerate = async (id: string, options?: RequestInit)
 
 
 /**
+ * @summary Deprecated assignment generation endpoint
+ */
+export type assignmentsControllerGenerateResponse401 = {
+  data: void
+  status: 401
+}
+    
+export type assignmentsControllerGenerateResponseComposite = assignmentsControllerGenerateResponse401;
+    
+export type assignmentsControllerGenerateResponse = assignmentsControllerGenerateResponseComposite & {
+  headers: Headers;
+}
+
+export const getAssignmentsControllerGenerateUrl = (nodeId: string,) => {
+
+
+  
+
+  return `/toc/${nodeId}/assignments/generate`
+}
+
+export const assignmentsControllerGenerate = async (nodeId: string, options?: RequestInit): Promise<assignmentsControllerGenerateResponse> => {
+  
+  return orvalFetcher<assignmentsControllerGenerateResponse>(getAssignmentsControllerGenerateUrl(nodeId),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Get the latest assignment for a ToC node
+ */
+export type assignmentsControllerGetLatestResponse200 = {
+  data: void
+  status: 200
+}
+
+export type assignmentsControllerGetLatestResponse202 = {
+  data: AssignmentsControllerGetLatest202
+  status: 202
+}
+
+export type assignmentsControllerGetLatestResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type assignmentsControllerGetLatestResponseComposite = assignmentsControllerGetLatestResponse200 | assignmentsControllerGetLatestResponse202 | assignmentsControllerGetLatestResponse404;
+    
+export type assignmentsControllerGetLatestResponse = assignmentsControllerGetLatestResponseComposite & {
+  headers: Headers;
+}
+
+export const getAssignmentsControllerGetLatestUrl = (nodeId: string,) => {
+
+
+  
+
+  return `/toc/${nodeId}/assignments/latest`
+}
+
+export const assignmentsControllerGetLatest = async (nodeId: string, options?: RequestInit): Promise<assignmentsControllerGetLatestResponse> => {
+  
+  return orvalFetcher<assignmentsControllerGetLatestResponse>(getAssignmentsControllerGetLatestUrl(nodeId),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Get assignment generation status for a book
+ */
+export type bookAssignmentsControllerGetStatusResponse200 = {
+  data: void
+  status: 200
+}
+
+export type bookAssignmentsControllerGetStatusResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type bookAssignmentsControllerGetStatusResponseComposite = bookAssignmentsControllerGetStatusResponse200 | bookAssignmentsControllerGetStatusResponse404;
+    
+export type bookAssignmentsControllerGetStatusResponse = bookAssignmentsControllerGetStatusResponseComposite & {
+  headers: Headers;
+}
+
+export const getBookAssignmentsControllerGetStatusUrl = (bookId: string,) => {
+
+
+  
+
+  return `/books/${bookId}/assignments/status`
+}
+
+export const bookAssignmentsControllerGetStatus = async (bookId: string, options?: RequestInit): Promise<bookAssignmentsControllerGetStatusResponse> => {
+  
+  return orvalFetcher<bookAssignmentsControllerGetStatusResponse>(getBookAssignmentsControllerGetStatusUrl(bookId),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
  * @summary List books
  */
 export type booksControllerListResponse200 = {
@@ -659,86 +780,6 @@ export const plansControllerUpdateStatus = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       updatePlanItemStatusDto,)
-  }
-);}
-
-
-
-/**
- * @summary Ensure assignment exists for a ToC node (idempotent)
- */
-export type assignmentsControllerGenerateResponse200 = {
-  data: void
-  status: 200
-}
-
-export type assignmentsControllerGenerateResponse401 = {
-  data: void
-  status: 401
-}
-    
-export type assignmentsControllerGenerateResponseComposite = assignmentsControllerGenerateResponse200 | assignmentsControllerGenerateResponse401;
-    
-export type assignmentsControllerGenerateResponse = assignmentsControllerGenerateResponseComposite & {
-  headers: Headers;
-}
-
-export const getAssignmentsControllerGenerateUrl = (nodeId: string,) => {
-
-
-  
-
-  return `/toc/${nodeId}/assignments/generate`
-}
-
-export const assignmentsControllerGenerate = async (nodeId: string, options?: RequestInit): Promise<assignmentsControllerGenerateResponse> => {
-  
-  return orvalFetcher<assignmentsControllerGenerateResponse>(getAssignmentsControllerGenerateUrl(nodeId),
-  {      
-    ...options,
-    method: 'POST'
-    
-    
-  }
-);}
-
-
-
-/**
- * @summary Get the latest assignment for a ToC node
- */
-export type assignmentsControllerGetLatestResponse200 = {
-  data: void
-  status: 200
-}
-
-export type assignmentsControllerGetLatestResponse404 = {
-  data: void
-  status: 404
-}
-    
-export type assignmentsControllerGetLatestResponseComposite = assignmentsControllerGetLatestResponse200 | assignmentsControllerGetLatestResponse404;
-    
-export type assignmentsControllerGetLatestResponse = assignmentsControllerGetLatestResponseComposite & {
-  headers: Headers;
-}
-
-export const getAssignmentsControllerGetLatestUrl = (nodeId: string,) => {
-
-
-  
-
-  return `/toc/${nodeId}/assignments/latest`
-}
-
-export const assignmentsControllerGetLatest = async (nodeId: string, options?: RequestInit): Promise<assignmentsControllerGetLatestResponse> => {
-  
-  return orvalFetcher<assignmentsControllerGetLatestResponse>(getAssignmentsControllerGetLatestUrl(nodeId),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
   }
 );}
 

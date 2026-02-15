@@ -8,9 +8,11 @@
 import type { IntakeControllerFinalize200Book } from './intakeControllerFinalize200Book';
 import type { IntakeControllerFinalize200TocSummary } from './intakeControllerFinalize200TocSummary';
 import type { IntakeControllerFinalize200PaceSummary } from './intakeControllerFinalize200PaceSummary';
+import type { IntakeControllerFinalize200AssignmentGeneration } from './intakeControllerFinalize200AssignmentGeneration';
 
 export type IntakeControllerFinalize200 = {
   book: IntakeControllerFinalize200Book;
   tocSummary: IntakeControllerFinalize200TocSummary;
   paceSummary: IntakeControllerFinalize200PaceSummary;
+  assignmentGeneration: IntakeControllerFinalize200AssignmentGeneration;
 };

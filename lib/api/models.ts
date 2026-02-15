@@ -1,6 +1,7 @@
 export type PlanItemType = "READ" | "ASSIGNMENT" | "TEST" | "REVIEW";
 
 export type PlanItemStatus = "TODO" | "DONE";
+export type AssignmentGenerationStatus = "PENDING" | "RUNNING" | "READY" | "PARTIAL_FAILED";
 
 export type BookProgressPayload = {
   doneItems?: number | null;
@@ -73,9 +74,19 @@ export type BookIntakeFinalizeResult = {
   tocSummary: {
     totalNodes: number;
   };
-  paceSummary?: {
+  paceSummary: {
     totalOptions: number;
   };
+  assignmentGeneration: BookAssignmentGenerationStatus;
+};
+
+export type BookAssignmentGenerationStatus = {
+  bookId: string;
+  status: AssignmentGenerationStatus;
+  totalSections: number;
+  generatedSections: number;
+  failedSections: number;
+  updatedAt: string;
 };
 
 export type TocTreeNode = {
@@ -176,7 +187,6 @@ export type AssignmentQuestion = {
 export type Assignment = {
   id: string;
   tocNodeId: string;
-  version: number;
   createdAt: string;
   tocNode: {
     id: string;
@@ -186,6 +196,26 @@ export type Assignment = {
   };
   questions: AssignmentQuestion[];
 };
+
+export type AssignmentPendingState = {
+  nodeId: string;
+  bookId: string;
+  sectionStatus: "PENDING" | "RUNNING" | "FAILED";
+  attemptCount: number;
+  nextRetryAt: string | null;
+  message: string;
+  assignmentGeneration: BookAssignmentGenerationStatus;
+};
+
+export type LatestAssignmentResult =
+  | {
+      state: "ready";
+      assignment: Assignment;
+    }
+  | {
+      state: "pending";
+      pending: AssignmentPendingState;
+    };
 
 export type AttemptFeedback = {
   promptVersion?: string;

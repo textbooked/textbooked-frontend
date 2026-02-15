@@ -1,5 +1,4 @@
 import {
-  assignmentsControllerGenerate,
   assignmentsControllerGetLatest,
   attemptsControllerCreate,
   attemptsControllerGrade,
@@ -14,7 +13,9 @@ import {
 import { apiFetch } from "@/lib/api/api-fetch";
 import type {
   Assignment,
+  AssignmentPendingState,
   Attempt,
+  BookAssignmentGenerationStatus,
   BookIntakeAnalyzeResult,
   BookIntakeFinalizeInput,
   BookIntakeFinalizeResult,
@@ -23,6 +24,7 @@ import type {
   BookProgressSummary,
   BookSummary,
   LibraryBookRow,
+  LatestAssignmentResult,
   PaceGenerationResponse,
   PlanDetail,
   PlanItem,
@@ -97,6 +99,19 @@ export async function getBookProgress(bookId: string): Promise<BookProgressSumma
   );
 
   return normalizeBookProgress(response.data);
+}
+
+export async function getBookAssignmentGenerationStatus(
+  bookId: string,
+): Promise<BookAssignmentGenerationStatus> {
+  const response = await apiFetch<ApiEnvelope<BookAssignmentGenerationStatus>>(
+    `/books/${bookId}/assignments/status`,
+    {
+      method: "GET",
+    },
+  );
+
+  return response.data;
 }
 
 export async function listLibraryBooksWithProgress(): Promise<LibraryBooksWithProgressResult> {
@@ -373,22 +388,20 @@ export async function getTocNode(
 
 export async function getLatestAssignment(
   nodeId: string,
-): Promise<Assignment | null> {
-  try {
-    const response = await assignmentsControllerGetLatest(nodeId);
-    return getData<Assignment>(response);
-  } catch (error: unknown) {
-    if (isApiError(error) && error.status === 404) {
-      return null;
-    }
+): Promise<LatestAssignmentResult> {
+  const response = await assignmentsControllerGetLatest(nodeId);
 
-    throw error;
+  if (response.status === 202) {
+    return {
+      state: "pending",
+      pending: getData<AssignmentPendingState>(response),
+    };
   }
-}
 
-export async function generateAssignment(nodeId: string): Promise<Assignment> {
-  const response = await assignmentsControllerGenerate(nodeId);
-  return getData<Assignment>(response);
+  return {
+    state: "ready",
+    assignment: getData<Assignment>(response),
+  };
 }
 
 export async function createAttempt(
