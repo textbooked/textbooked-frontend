@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
@@ -15,7 +15,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import {
   createAttempt,
-  generateAssignment,
   getLatestAssignment,
   getTocNode,
   gradeAttempt,
@@ -47,7 +46,6 @@ export default function TocNodePage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isGeneratingAssignment, setIsGeneratingAssignment] = useState(false);
   const [submittingQuestionId, setSubmittingQuestionId] = useState<string | null>(null);
   const [gradingAttemptId, setGradingAttemptId] = useState<string | null>(null);
 
@@ -102,28 +100,6 @@ export default function TocNodePage() {
   useEffect(() => {
     void loadPage();
   }, [loadPage]);
-
-  async function onGenerateAssignment() {
-    if (!nodeId) {
-      toast.error("Invalid ToC node id.");
-      return;
-    }
-
-    setIsGeneratingAssignment(true);
-
-    try {
-      const generated = await generateAssignment(nodeId);
-      setAssignment(generated);
-      setAnswers({});
-      await hydrateAttempts(generated.questions);
-      toast.success("Assignment generated.");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to generate assignment.";
-      toast.error(message);
-    } finally {
-      setIsGeneratingAssignment(false);
-    }
-  }
 
   async function onSubmitAnswer(questionId: string) {
     const answerText = answers[questionId]?.trim() ?? "";
@@ -236,20 +212,10 @@ export default function TocNodePage() {
           <CardTitle className="text-base">Assignment</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void onGenerateAssignment()}
-            disabled={isGeneratingAssignment}
-          >
-            <Sparkles className="size-4" />
-            {isGeneratingAssignment ? "Generating..." : "Generate Assignment"}
-          </Button>
-
           {!assignment ? (
             <EmptyState
-              title="No assignment yet"
-              description="Generate an assignment to create question prompts for this node."
+              title="Assignment unavailable"
+              description="No assignment exists for this section yet."
             />
           ) : (
             <div className="space-y-4">

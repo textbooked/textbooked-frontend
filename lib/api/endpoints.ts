@@ -15,8 +15,14 @@ import { apiFetch } from "@/lib/api/api-fetch";
 import type {
   Assignment,
   Attempt,
+  BookIntakeAnalyzeResult,
+  BookIntakeFinalizeInput,
+  BookIntakeFinalizeResult,
   BookDetail,
+  BookProgressPayload,
+  BookProgressSummary,
   BookSummary,
+  LibraryBookRow,
   PaceGenerationResponse,
   PlanDetail,
   PlanItem,
@@ -41,6 +47,11 @@ const questionIdByAttemptId = new Map<string, string>();
 function getData<T>(response: unknown): T {
   return (response as ApiEnvelope<T>).data;
 }
+
+export type LibraryBooksWithProgressResult = {
+  books: LibraryBookRow[];
+  missingProgressEndpoint: boolean;
+};
 
 export async function listBooks(): Promise<BookSummary[]> {
   try {
@@ -77,6 +88,84 @@ export async function listBooks(): Promise<BookSummary[]> {
   }
 }
 
+export async function getBookProgress(bookId: string): Promise<BookProgressSummary> {
+  const response = await apiFetch<ApiEnvelope<BookProgressPayload>>(
+    `/books/${bookId}/progress`,
+    {
+      method: "GET",
+    },
+  );
+
+  return normalizeBookProgress(response.data);
+}
+
+export async function listLibraryBooksWithProgress(): Promise<LibraryBooksWithProgressResult> {
+  const books = await listBooks();
+  const progressByBookId = new Map<string, BookProgressSummary>();
+  const booksMissingProgress: BookSummary[] = [];
+
+  for (const book of books) {
+    const fromBookPayload = normalizeMaybeBookProgress(book.progress);
+
+    if (fromBookPayload) {
+      progressByBookId.set(book.id, fromBookPayload);
+    } else {
+      booksMissingProgress.push(book);
+    }
+  }
+
+  let missingProgressEndpoint = false;
+
+  if (booksMissingProgress.length > 0) {
+    const [firstBook, ...remainingBooks] = booksMissingProgress;
+
+    try {
+      const firstProgress = await getBookProgress(firstBook.id);
+      progressByBookId.set(firstBook.id, firstProgress);
+
+      const remainingProgress = await Promise.all(
+        remainingBooks.map(async (book) => {
+          try {
+            const progress = await getBookProgress(book.id);
+            return [book.id, progress] as const;
+          } catch (error: unknown) {
+            if (isApiError(error) && error.status === 404) {
+              missingProgressEndpoint = true;
+            }
+
+            return [book.id, defaultBookProgress()] as const;
+          }
+        }),
+      );
+
+      for (const [bookId, progress] of remainingProgress) {
+        progressByBookId.set(bookId, progress);
+      }
+    } catch (error: unknown) {
+      if (isApiError(error) && error.status === 404) {
+        missingProgressEndpoint = true;
+      }
+
+      for (const book of booksMissingProgress) {
+        progressByBookId.set(book.id, defaultBookProgress());
+      }
+    }
+  }
+
+  const rows: LibraryBookRow[] = books.map((book) => ({
+    ...book,
+    progress:
+      progressByBookId.get(book.id) ??
+      normalizeMaybeBookProgress(book.progress) ??
+      defaultBookProgress(),
+  }));
+
+  return {
+    books: rows,
+    missingProgressEndpoint,
+  };
+}
+
 export async function createBook(input: {
   title: string;
   author: string;
@@ -92,6 +181,45 @@ export async function createBook(input: {
   rememberBookId(createdBook.id);
 
   return createdBook;
+}
+
+export async function analyzeBookIntake(
+  file: File,
+  tocStartPage: number,
+  tocEndPage: number,
+): Promise<BookIntakeAnalyzeResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("tocStartPage", String(tocStartPage));
+  formData.append("tocEndPage", String(tocEndPage));
+
+  const response = await apiFetch<ApiEnvelope<BookIntakeAnalyzeResult>>(
+    "/books/intake/analyze",
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+
+  return response.data;
+}
+
+export async function finalizeBookIntake(
+  payload: BookIntakeFinalizeInput,
+): Promise<BookIntakeFinalizeResult> {
+  const response = await apiFetch<ApiEnvelope<BookIntakeFinalizeResult>>(
+    "/books/intake/finalize",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  rememberBookId(response.data.book.id);
+  return response.data;
 }
 
 export async function getBook(bookId: string): Promise<BookDetail> {
@@ -113,6 +241,19 @@ export async function uploadBookToc(
 ): Promise<TocTreeResponse> {
   const response = await tocControllerUpload(bookId, { tocText });
   return getData<TocTreeResponse>(response);
+}
+
+export async function listPaceOptions(
+  bookId: string,
+): Promise<PaceGenerationResponse> {
+  const response = await apiFetch<ApiEnvelope<PaceGenerationResponse>>(
+    `/books/${bookId}/paces`,
+    {
+      method: "GET",
+    },
+  );
+
+  return response.data;
 }
 
 export async function generatePaces(
@@ -137,6 +278,27 @@ export async function createPlan(
 export async function getPlan(planId: string): Promise<PlanDetail> {
   const response = await plansControllerGetById(planId);
   return getData<PlanDetail>(response);
+}
+
+export async function getLatestPlanForBook(
+  bookId: string,
+): Promise<PlanDetail | null> {
+  try {
+    const response = await apiFetch<ApiEnvelope<PlanDetail>>(
+      `/books/${bookId}/plans/latest`,
+      {
+        method: "GET",
+      },
+    );
+
+    return response.data;
+  } catch (error: unknown) {
+    if (isApiError(error) && error.status === 404) {
+      return null;
+    }
+
+    throw error;
+  }
 }
 
 export async function updatePlanItemStatus(
@@ -391,4 +553,80 @@ function updateCachedAttempt(attempt: Attempt): void {
     ...attempt,
     questionId,
   });
+}
+
+function normalizeMaybeBookProgress(
+  progress: BookProgressPayload | null | undefined,
+): BookProgressSummary | null {
+  if (!progress || typeof progress !== "object") {
+    return null;
+  }
+
+  return normalizeBookProgress(progress);
+}
+
+function normalizeBookProgress(progress: BookProgressPayload): BookProgressSummary {
+  const progressRecord = progress as BookProgressPayload & Record<string, unknown>;
+  const doneItems = clampNonNegative(progress.doneItems);
+  const totalItems = clampNonNegative(progress.totalItems);
+  const computedPercent =
+    totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
+  const percentComplete = clampPercent(
+    typeof progress.percentComplete === "number"
+      ? progress.percentComplete
+      : computedPercent,
+  );
+  const currentChapterOrSection =
+    firstNonEmptyString([
+      progress.currentChapterOrSection,
+      progress.currentNodeTitle,
+      progress.currentSectionTitle,
+      progress.currentChapterTitle,
+      progressRecord.currentChapterOrSectionName,
+      progressRecord.currentTocTitle,
+      progressRecord.currentTitle,
+      progressRecord.currentNode,
+    ]) ?? "Not started yet";
+
+  return {
+    doneItems,
+    totalItems,
+    percentComplete,
+    currentChapterOrSection,
+  };
+}
+
+function defaultBookProgress(): BookProgressSummary {
+  return {
+    doneItems: 0,
+    totalItems: 0,
+    percentComplete: 0,
+    currentChapterOrSection: "Not started yet",
+  };
+}
+
+function clampNonNegative(value: number | null | undefined): number {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.round(value));
+}
+
+function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+function firstNonEmptyString(values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+
+  return null;
 }

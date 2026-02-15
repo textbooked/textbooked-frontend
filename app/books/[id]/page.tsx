@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
@@ -14,21 +14,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import {
   createPlan,
   generatePaces,
   getBook,
   getBookToc,
-  uploadBookToc,
+  getLatestPlanForBook,
+  listPaceOptions,
 } from "@/lib/api/endpoints";
 import type {
   BookDetail,
+  PaceGenerationResponse,
   PaceOption,
+  PlanDetail,
   TocTreeResponse,
 } from "@/lib/api/models";
+import { isApiError } from "@/lib/api/request";
 import { todayIsoDate } from "@/lib/utils/date";
 import { parseRequiredUuid } from "@/lib/utils/uuid";
 
@@ -38,16 +40,14 @@ export default function BookOverviewPage() {
 
   const [book, setBook] = useState<BookDetail | null>(null);
   const [toc, setToc] = useState<TocTreeResponse | null>(null);
-  const [tocInput, setTocInput] = useState("");
   const [paceOptions, setPaceOptions] = useState<PaceOption[]>([]);
   const [selectedPaceId, setSelectedPaceId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(todayIsoDate());
-  const [createdPlanId, setCreatedPlanId] = useState<string | null>(null);
+  const [latestPlan, setLatestPlan] = useState<PlanDetail | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isUploadingToc, setIsUploadingToc] = useState(false);
-  const [isGeneratingPaces, setIsGeneratingPaces] = useState(false);
+  const [isPreparingPaces, setIsPreparingPaces] = useState(false);
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
 
   const loadBookState = useCallback(async () => {
@@ -61,9 +61,34 @@ export default function BookOverviewPage() {
     setError(null);
 
     try {
-      const [bookData, tocData] = await Promise.all([getBook(bookId), getBookToc(bookId)]);
+      const [bookData, tocData, latestPlanData] = await Promise.all([
+        getBook(bookId),
+        getBookToc(bookId),
+        getLatestPlanForBook(bookId),
+      ]);
+
+      let pacesPayload: PaceGenerationResponse;
+      try {
+        pacesPayload = await listPaceOptions(bookId);
+      } catch (paceError: unknown) {
+        if (isApiError(paceError) && paceError.status === 404) {
+          pacesPayload = { bookId, options: [] };
+        } else {
+          throw paceError;
+        }
+      }
+
       setBook(bookData);
       setToc(tocData);
+      setPaceOptions(pacesPayload.options);
+      setLatestPlan(latestPlanData);
+      setSelectedPaceId(
+        latestPlanData?.paceOptionId ?? pacesPayload.options[0]?.id ?? null,
+      );
+
+      if (latestPlanData?.startDate) {
+        setStartDate(latestPlanData.startDate.slice(0, 10));
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load book.";
       setError(message);
@@ -77,58 +102,35 @@ export default function BookOverviewPage() {
     void loadBookState();
   }, [loadBookState]);
 
-  async function onUploadToc() {
+  async function onPreparePaces() {
     if (!bookId) {
       toast.error("Invalid book id.");
       return;
     }
 
-    if (!tocInput.trim()) {
-      toast.error("Paste ToC text before uploading.");
-      return;
-    }
-
-    setIsUploadingToc(true);
-    try {
-      const uploaded = await uploadBookToc(bookId, tocInput.trim());
-      setToc(uploaded);
-      setTocInput("");
-      setPaceOptions([]);
-      setSelectedPaceId(null);
-      toast.success("ToC uploaded.");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to upload ToC.";
-      toast.error(message);
-    } finally {
-      setIsUploadingToc(false);
-    }
-  }
-
-  async function onGeneratePaces() {
-    if (!bookId) {
-      toast.error("Invalid book id.");
-      return;
-    }
-
-    setIsGeneratingPaces(true);
-    setCreatedPlanId(null);
-
+    setIsPreparingPaces(true);
     try {
       const response = await generatePaces(bookId);
       setPaceOptions(response.options);
-      setSelectedPaceId(response.options[0]?.id ?? null);
-      toast.success("Pace options generated.");
+      setSelectedPaceId((current) => current ?? response.options[0]?.id ?? null);
+      toast.success("Pace options are ready.");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to generate pace options.";
+      const message =
+        err instanceof Error ? err.message : "Failed to prepare pace options.";
       toast.error(message);
     } finally {
-      setIsGeneratingPaces(false);
+      setIsPreparingPaces(false);
     }
   }
 
   async function onCreatePlan() {
     if (!bookId) {
       toast.error("Invalid book id.");
+      return;
+    }
+
+    if (latestPlan) {
+      toast.info("A plan already exists for this book.");
       return;
     }
 
@@ -144,7 +146,8 @@ export default function BookOverviewPage() {
         startDate,
       });
 
-      setCreatedPlanId(created.id);
+      setLatestPlan(created);
+      setSelectedPaceId(created.paceOptionId);
       toast.success("Plan created.");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to create plan.";
@@ -203,24 +206,6 @@ export default function BookOverviewPage() {
         <TabsContent value="toc" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Upload ToC</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                value={tocInput}
-                onChange={(event) => setTocInput(event.target.value)}
-                placeholder="Paste textbook table of contents text..."
-                rows={8}
-              />
-
-              <Button type="button" onClick={() => void onUploadToc()} disabled={isUploadingToc}>
-                {isUploadingToc ? "Uploading..." : "Upload ToC"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle className="text-base">ToC Tree</CardTitle>
             </CardHeader>
             <CardContent>
@@ -228,8 +213,8 @@ export default function BookOverviewPage() {
                 <TocTree nodes={toc.nodes} linkToNodes bookId={bookId ?? undefined} />
               ) : (
                 <EmptyState
-                  title="No ToC yet"
-                  description="Upload ToC text to parse and render the chapter tree."
+                  title="No ToC found"
+                  description="This book has no parsed table of contents."
                 />
               )}
             </CardContent>
@@ -242,22 +227,29 @@ export default function BookOverviewPage() {
               <CardTitle className="text-base">Pace Options</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void onGeneratePaces()}
-                disabled={isGeneratingPaces}
-              >
-                <Sparkles className="size-4" />
-                {isGeneratingPaces ? "Generating..." : "Generate Pace Options"}
-              </Button>
-
-              <Separator />
+              {latestPlan ? (
+                <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                  <p className="font-medium">Plan already created</p>
+                  <p className="text-muted-foreground">
+                    Selected pace: {latestPlan.paceOption.name}
+                  </p>
+                </div>
+              ) : null}
 
               {paceOptions.length === 0 ? (
                 <EmptyState
-                  title="No pace options"
-                  description="Generate pace options after uploading a ToC."
+                  title="No pace options yet"
+                  description="Prepare default pace options for this textbook."
+                  action={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => void onPreparePaces()}
+                      disabled={isPreparingPaces || latestPlan !== null}
+                    >
+                      {isPreparingPaces ? "Preparing..." : "Prepare Pace Options"}
+                    </Button>
+                  }
                 />
               ) : (
                 <div className="space-y-3">
@@ -269,7 +261,8 @@ export default function BookOverviewPage() {
                       <div className="space-y-1">
                         <p className="text-sm font-medium">{option.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {option.sessionsPerWeek} sessions/week • {option.minutesPerSession} min/session
+                          {option.sessionsPerWeek} sessions/week •{" "}
+                          {option.minutesPerSession} min/session
                         </p>
                       </div>
                       <input
@@ -277,6 +270,7 @@ export default function BookOverviewPage() {
                         name="pace-option"
                         checked={selectedPaceId === option.id}
                         onChange={() => setSelectedPaceId(option.id)}
+                        disabled={latestPlan !== null}
                       />
                     </label>
                   ))}
@@ -290,26 +284,31 @@ export default function BookOverviewPage() {
                       type="date"
                       value={startDate}
                       onChange={(event) => setStartDate(event.target.value)}
+                      disabled={latestPlan !== null}
                     />
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Button
-                      type="button"
-                      onClick={() => void onCreatePlan()}
-                      disabled={isCreatingPlan || !selectedPaceId}
-                    >
-                      {isCreatingPlan ? "Creating..." : "Create Plan"}
-                    </Button>
-
-                    {createdPlanId ? (
-                      <Button asChild variant="secondary">
-                        <Link href={`/plans/${createdPlanId}`}>Open Plan #{createdPlanId}</Link>
-                      </Button>
-                    ) : null}
                   </div>
                 </div>
               )}
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  type="button"
+                  onClick={() => void onCreatePlan()}
+                  disabled={isCreatingPlan || !selectedPaceId || latestPlan !== null}
+                >
+                  {latestPlan
+                    ? "Plan Locked"
+                    : isCreatingPlan
+                      ? "Creating..."
+                      : "Create Plan"}
+                </Button>
+
+                {latestPlan ? (
+                  <Button asChild variant="secondary">
+                    <Link href={`/plans/${latestPlan.id}`}>Open Plan #{latestPlan.id}</Link>
+                  </Button>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

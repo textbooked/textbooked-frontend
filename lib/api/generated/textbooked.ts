@@ -10,7 +10,11 @@ import type {
   CreateBookDto,
   CreatePlanDto,
   CurrentUserDto,
+  FinalizeIntakeDto,
   HealthControllerGetHealth200,
+  IntakeControllerAnalyze200,
+  IntakeControllerAnalyzeBody,
+  IntakeControllerFinalize200,
   UpdatePlanItemStatusDto,
   UploadTocDto
 } from './models';
@@ -93,116 +97,86 @@ export const healthControllerGetHealth = async ( options?: RequestInit): Promise
 
 
 /**
- * @summary List books
+ * @summary Analyze uploaded PDF for title/author suggestions and ToC range text
  */
-export type booksControllerListResponse200 = {
-  data: void
+export type intakeControllerAnalyzeResponse200 = {
+  data: IntakeControllerAnalyze200
   status: 200
 }
+
+export type intakeControllerAnalyzeResponse400 = {
+  data: void
+  status: 400
+}
     
-export type booksControllerListResponseComposite = booksControllerListResponse200;
+export type intakeControllerAnalyzeResponseComposite = intakeControllerAnalyzeResponse200 | intakeControllerAnalyzeResponse400;
     
-export type booksControllerListResponse = booksControllerListResponseComposite & {
+export type intakeControllerAnalyzeResponse = intakeControllerAnalyzeResponseComposite & {
   headers: Headers;
 }
 
-export const getBooksControllerListUrl = () => {
+export const getIntakeControllerAnalyzeUrl = () => {
 
 
   
 
-  return `/books`
+  return `/books/intake/analyze`
 }
 
-export const booksControllerList = async ( options?: RequestInit): Promise<booksControllerListResponse> => {
-  
-  return orvalFetcher<booksControllerListResponse>(getBooksControllerListUrl(),
+export const intakeControllerAnalyze = async (intakeControllerAnalyzeBody: IntakeControllerAnalyzeBody, options?: RequestInit): Promise<intakeControllerAnalyzeResponse> => {
+    const formData = new FormData();
+formData.append('file', intakeControllerAnalyzeBody.file)
+formData.append('tocStartPage', intakeControllerAnalyzeBody.tocStartPage.toString())
+formData.append('tocEndPage', intakeControllerAnalyzeBody.tocEndPage.toString())
+
+  return orvalFetcher<intakeControllerAnalyzeResponse>(getIntakeControllerAnalyzeUrl(),
   {      
     ...options,
-    method: 'GET'
-    
-    
+    method: 'POST'
+    ,
+    body: 
+      formData,
   }
 );}
 
 
 
 /**
- * @summary Create a book
+ * @summary Finalize intake by creating book and persisting reviewed ToC
  */
-export type booksControllerCreateResponse200 = {
-  data: void
+export type intakeControllerFinalizeResponse200 = {
+  data: IntakeControllerFinalize200
   status: 200
 }
 
-export type booksControllerCreateResponse400 = {
+export type intakeControllerFinalizeResponse400 = {
   data: void
   status: 400
 }
     
-export type booksControllerCreateResponseComposite = booksControllerCreateResponse200 | booksControllerCreateResponse400;
+export type intakeControllerFinalizeResponseComposite = intakeControllerFinalizeResponse200 | intakeControllerFinalizeResponse400;
     
-export type booksControllerCreateResponse = booksControllerCreateResponseComposite & {
+export type intakeControllerFinalizeResponse = intakeControllerFinalizeResponseComposite & {
   headers: Headers;
 }
 
-export const getBooksControllerCreateUrl = () => {
+export const getIntakeControllerFinalizeUrl = () => {
 
 
   
 
-  return `/books`
+  return `/books/intake/finalize`
 }
 
-export const booksControllerCreate = async (createBookDto: CreateBookDto, options?: RequestInit): Promise<booksControllerCreateResponse> => {
+export const intakeControllerFinalize = async (finalizeIntakeDto: FinalizeIntakeDto, options?: RequestInit): Promise<intakeControllerFinalizeResponse> => {
   
-  return orvalFetcher<booksControllerCreateResponse>(getBooksControllerCreateUrl(),
+  return orvalFetcher<intakeControllerFinalizeResponse>(getIntakeControllerFinalizeUrl(),
   {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      createBookDto,)
-  }
-);}
-
-
-
-/**
- * @summary Get a book by ID
- */
-export type booksControllerGetByIdResponse200 = {
-  data: void
-  status: 200
-}
-
-export type booksControllerGetByIdResponse404 = {
-  data: void
-  status: 404
-}
-    
-export type booksControllerGetByIdResponseComposite = booksControllerGetByIdResponse200 | booksControllerGetByIdResponse404;
-    
-export type booksControllerGetByIdResponse = booksControllerGetByIdResponseComposite & {
-  headers: Headers;
-}
-
-export const getBooksControllerGetByIdUrl = (id: string,) => {
-
-
-  
-
-  return `/books/${id}`
-}
-
-export const booksControllerGetById = async (id: string, options?: RequestInit): Promise<booksControllerGetByIdResponse> => {
-  
-  return orvalFetcher<booksControllerGetByIdResponse>(getBooksControllerGetByIdUrl(id),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
+      finalizeIntakeDto,)
   }
 );}
 
@@ -331,6 +305,46 @@ export const tocNodesControllerGetById = async (nodeId: string, options?: Reques
 
 
 /**
+ * @summary Get pace options for a book
+ */
+export type pacesControllerListResponse200 = {
+  data: void
+  status: 200
+}
+
+export type pacesControllerListResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type pacesControllerListResponseComposite = pacesControllerListResponse200 | pacesControllerListResponse404;
+    
+export type pacesControllerListResponse = pacesControllerListResponseComposite & {
+  headers: Headers;
+}
+
+export const getPacesControllerListUrl = (id: string,) => {
+
+
+  
+
+  return `/books/${id}/paces`
+}
+
+export const pacesControllerList = async (id: string, options?: RequestInit): Promise<pacesControllerListResponse> => {
+  
+  return orvalFetcher<pacesControllerListResponse>(getPacesControllerListUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
  * @summary Generate pace options for a book
  */
 export type pacesControllerGenerateResponse200 = {
@@ -363,6 +377,122 @@ export const pacesControllerGenerate = async (id: string, options?: RequestInit)
   {      
     ...options,
     method: 'POST'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary List books
+ */
+export type booksControllerListResponse200 = {
+  data: void
+  status: 200
+}
+    
+export type booksControllerListResponseComposite = booksControllerListResponse200;
+    
+export type booksControllerListResponse = booksControllerListResponseComposite & {
+  headers: Headers;
+}
+
+export const getBooksControllerListUrl = () => {
+
+
+  
+
+  return `/books`
+}
+
+export const booksControllerList = async ( options?: RequestInit): Promise<booksControllerListResponse> => {
+  
+  return orvalFetcher<booksControllerListResponse>(getBooksControllerListUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Create a book
+ */
+export type booksControllerCreateResponse200 = {
+  data: void
+  status: 200
+}
+
+export type booksControllerCreateResponse400 = {
+  data: void
+  status: 400
+}
+    
+export type booksControllerCreateResponseComposite = booksControllerCreateResponse200 | booksControllerCreateResponse400;
+    
+export type booksControllerCreateResponse = booksControllerCreateResponseComposite & {
+  headers: Headers;
+}
+
+export const getBooksControllerCreateUrl = () => {
+
+
+  
+
+  return `/books`
+}
+
+export const booksControllerCreate = async (createBookDto: CreateBookDto, options?: RequestInit): Promise<booksControllerCreateResponse> => {
+  
+  return orvalFetcher<booksControllerCreateResponse>(getBooksControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createBookDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Get a book by ID
+ */
+export type booksControllerGetByIdResponse200 = {
+  data: void
+  status: 200
+}
+
+export type booksControllerGetByIdResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type booksControllerGetByIdResponseComposite = booksControllerGetByIdResponse200 | booksControllerGetByIdResponse404;
+    
+export type booksControllerGetByIdResponse = booksControllerGetByIdResponseComposite & {
+  headers: Headers;
+}
+
+export const getBooksControllerGetByIdUrl = (id: string,) => {
+
+
+  
+
+  return `/books/${id}`
+}
+
+export const booksControllerGetById = async (id: string, options?: RequestInit): Promise<booksControllerGetByIdResponse> => {
+  
+  return orvalFetcher<booksControllerGetByIdResponse>(getBooksControllerGetByIdUrl(id),
+  {      
+    ...options,
+    method: 'GET'
     
     
   }
@@ -407,6 +537,46 @@ export const plansControllerCreate = async (bookId: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createPlanDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Get latest plan for a book
+ */
+export type plansControllerGetLatestByBookResponse200 = {
+  data: void
+  status: 200
+}
+
+export type plansControllerGetLatestByBookResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type plansControllerGetLatestByBookResponseComposite = plansControllerGetLatestByBookResponse200 | plansControllerGetLatestByBookResponse404;
+    
+export type plansControllerGetLatestByBookResponse = plansControllerGetLatestByBookResponseComposite & {
+  headers: Headers;
+}
+
+export const getPlansControllerGetLatestByBookUrl = (bookId: string,) => {
+
+
+  
+
+  return `/books/${bookId}/plans/latest`
+}
+
+export const plansControllerGetLatestByBook = async (bookId: string, options?: RequestInit): Promise<plansControllerGetLatestByBookResponse> => {
+  
+  return orvalFetcher<plansControllerGetLatestByBookResponse>(getPlansControllerGetLatestByBookUrl(bookId),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 
@@ -495,7 +665,7 @@ export const plansControllerUpdateStatus = async (id: string,
 
 
 /**
- * @summary Generate a new assignment version for a ToC node
+ * @summary Ensure assignment exists for a ToC node (idempotent)
  */
 export type assignmentsControllerGenerateResponse200 = {
   data: void

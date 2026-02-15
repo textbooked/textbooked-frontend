@@ -2,12 +2,34 @@ export type PlanItemType = "READ" | "ASSIGNMENT" | "TEST" | "REVIEW";
 
 export type PlanItemStatus = "TODO" | "DONE";
 
+export type BookProgressPayload = {
+  doneItems?: number | null;
+  totalItems?: number | null;
+  percentComplete?: number | null;
+  currentChapterOrSection?: string | null;
+  currentNodeTitle?: string | null;
+  currentSectionTitle?: string | null;
+  currentChapterTitle?: string | null;
+};
+
+export type BookProgressSummary = {
+  doneItems: number;
+  totalItems: number;
+  percentComplete: number;
+  currentChapterOrSection: string;
+};
+
 export type BookSummary = {
   id: string;
   title: string;
   author: string;
   coverUrl: string | null;
   createdAt: string;
+  progress?: BookProgressPayload | null;
+};
+
+export type LibraryBookRow = Omit<BookSummary, "progress"> & {
+  progress: BookProgressSummary;
 };
 
 export type BookDetail = BookSummary & {
@@ -15,6 +37,44 @@ export type BookDetail = BookSummary & {
     tocNodes: number;
     paceOptions: number;
     plans: number;
+  };
+};
+
+export type BookIntakeAnalyzeResult = {
+  fileName: string;
+  pageCount: number;
+  suggestedTitle: string;
+  suggestedAuthor: string;
+  extractedTocText: string;
+  tocPageRange: {
+    start: number;
+    end: number;
+  };
+  warnings: string[];
+};
+
+export type BookIntakeFinalizeSourceMeta = {
+  fileName?: string;
+  coverPage?: number;
+  tocStartPage?: number;
+  tocEndPage?: number;
+};
+
+export type BookIntakeFinalizeInput = {
+  title: string;
+  author: string;
+  tocText: string;
+  coverImageDataUrl: string;
+  sourceMeta?: BookIntakeFinalizeSourceMeta;
+};
+
+export type BookIntakeFinalizeResult = {
+  book: BookSummary;
+  tocSummary: {
+    totalNodes: number;
+  };
+  paceSummary?: {
+    totalOptions: number;
   };
 };
 
