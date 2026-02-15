@@ -339,11 +339,11 @@ export async function getTocNode(
   bookId?: string,
 ): Promise<TocNodeDetail> {
   try {
-    const response = await apiFetch<ApiEnvelope<TocNodeDetail>>(`/toc/${nodeId}`, {
+    const response = await apiFetch<ApiEnvelope<unknown>>(`/toc/${nodeId}`, {
       method: "GET",
     });
 
-    return response.data;
+    return normalizeTocNodeDetailResponse(response.data, nodeId, bookId);
   } catch (error: unknown) {
     if (!(isApiError(error) && error.status === 404)) {
       throw error;
@@ -384,6 +384,96 @@ export async function getTocNode(
       },
     };
   }
+}
+
+function normalizeTocNodeDetailResponse(
+  payload: unknown,
+  requestedNodeId: string,
+  hintedBookId?: string,
+): TocNodeDetail {
+  if (isTocNodeDetail(payload)) {
+    return {
+      ...payload,
+      parents: Array.isArray(payload.parents) ? payload.parents : [],
+    };
+  }
+
+  if (!isRecord(payload)) {
+    throw new ApiError("Unexpected ToC node response payload.", 500);
+  }
+
+  const rawNodeId = asString(payload.id) ?? requestedNodeId;
+  const rawBook = isRecord(payload.book) ? payload.book : null;
+  const resolvedBookId = asString(rawBook?.id) ?? hintedBookId;
+  const resolvedBookTitle = asString(rawBook?.title) ?? "Book";
+
+  if (!resolvedBookId || !isUuid(resolvedBookId)) {
+    throw new ApiError(
+      "This backend did not return a valid bookId for the ToC node. Open this node from a book/plan link.",
+      404,
+    );
+  }
+
+  const rawParent = isRecord(payload.parent) ? payload.parent : null;
+  const parentId = asString(rawParent?.id);
+  const parentTitle = asString(rawParent?.title);
+
+  return {
+    node: {
+      id: rawNodeId,
+      parentId: asNullableString(payload.parentId),
+      title: asString(payload.title) ?? "Untitled Section",
+      order: asNumber(payload.order) ?? 0,
+      depth: asNumber(payload.depth) ?? 1,
+    },
+    parents:
+      parentId && parentTitle
+        ? [
+            {
+              id: parentId,
+              title: parentTitle,
+            },
+          ]
+        : [],
+    book: {
+      id: resolvedBookId,
+      title: resolvedBookTitle,
+    },
+  };
+}
+
+function isTocNodeDetail(value: unknown): value is TocNodeDetail {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    isRecord(value.node) &&
+    Array.isArray(value.parents) &&
+    isRecord(value.book) &&
+    typeof value.node.id === "string" &&
+    typeof value.book.id === "string"
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function asNullableString(value: unknown): string | null {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return value === null ? null : null;
+}
+
+function asNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 export async function getLatestAssignment(

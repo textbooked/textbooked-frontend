@@ -109,6 +109,19 @@ export default function TocNodePage() {
       return;
     }
 
+    const pending = assignmentResult.pending;
+    const generationActive =
+      pending.assignmentGeneration.status === "PENDING" ||
+      pending.assignmentGeneration.status === "RUNNING";
+    const sectionActive =
+      pending.sectionStatus === "PENDING" ||
+      pending.sectionStatus === "RUNNING" ||
+      (pending.sectionStatus === "FAILED" && Boolean(pending.nextRetryAt));
+
+    if (!generationActive || !sectionActive) {
+      return;
+    }
+
     const timer = window.setInterval(() => {
       void (async () => {
         try {
@@ -210,6 +223,10 @@ export default function TocNodePage() {
   const assignment = assignmentResult?.state === "ready" ? assignmentResult.assignment : null;
   const pendingAssignment =
     assignmentResult?.state === "pending" ? assignmentResult.pending : null;
+  const generationFinalized =
+    pendingAssignment &&
+    (pendingAssignment.assignmentGeneration.status === "READY" ||
+      pendingAssignment.assignmentGeneration.status === "PARTIAL_FAILED");
 
   return (
     <section className="space-y-6">
@@ -264,6 +281,12 @@ export default function TocNodePage() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">{pendingAssignment.message}</p>
+                {generationFinalized ? (
+                  <p className="text-xs text-muted-foreground">
+                    Assignment generation is finalized for this book. If this section is
+                    not a leaf section, no assignment will be generated for it.
+                  </p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
