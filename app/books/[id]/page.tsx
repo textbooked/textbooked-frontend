@@ -19,11 +19,13 @@ import {
   createPlan,
   generatePaces,
   getBook,
+  getBookAssignmentGenerationStatus,
   getBookToc,
   getLatestPlanForBook,
   listPaceOptions,
 } from "@/lib/api/endpoints";
 import type {
+  BookAssignmentGenerationStatus,
   BookDetail,
   PaceGenerationResponse,
   PaceOption,
@@ -31,7 +33,7 @@ import type {
   TocTreeResponse,
 } from "@/lib/api/models";
 import { isApiError } from "@/lib/api/request";
-import { todayIsoDate } from "@/lib/utils/date";
+import { formatDateTime, todayIsoDate } from "@/lib/utils/date";
 import { parseRequiredUuid } from "@/lib/utils/uuid";
 
 export default function BookOverviewPage() {
@@ -44,11 +46,36 @@ export default function BookOverviewPage() {
   const [selectedPaceId, setSelectedPaceId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(todayIsoDate());
   const [latestPlan, setLatestPlan] = useState<PlanDetail | null>(null);
+  const [assignmentGenerationStatus, setAssignmentGenerationStatus] =
+    useState<BookAssignmentGenerationStatus | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPreparingPaces, setIsPreparingPaces] = useState(false);
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
+
+  const refreshAssignmentStatus = useCallback(
+    async (bookIdValue: string, silent = false) => {
+      try {
+        const status = await getBookAssignmentGenerationStatus(bookIdValue);
+        setAssignmentGenerationStatus(status);
+      } catch (err: unknown) {
+        if (isApiError(err) && err.status === 404) {
+          setAssignmentGenerationStatus(null);
+          return;
+        }
+
+        if (!silent) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : "Failed to load assignment generation status.";
+          toast.error(message);
+        }
+      }
+    },
+    [],
+  );
 
   const loadBookState = useCallback(async () => {
     if (!bookId) {
@@ -85,6 +112,7 @@ export default function BookOverviewPage() {
       setSelectedPaceId(
         latestPlanData?.paceOptionId ?? pacesPayload.options[0]?.id ?? null,
       );
+      await refreshAssignmentStatus(bookId, true);
 
       if (latestPlanData?.startDate) {
         setStartDate(latestPlanData.startDate.slice(0, 10));
@@ -96,11 +124,30 @@ export default function BookOverviewPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [bookId]);
+  }, [bookId, refreshAssignmentStatus]);
 
   useEffect(() => {
     void loadBookState();
   }, [loadBookState]);
+
+  useEffect(() => {
+    if (
+      !bookId ||
+      !assignmentGenerationStatus ||
+      (assignmentGenerationStatus.status !== "PENDING" &&
+        assignmentGenerationStatus.status !== "RUNNING")
+    ) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      void refreshAssignmentStatus(bookId, true);
+    }, 9000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [assignmentGenerationStatus, bookId, refreshAssignmentStatus]);
 
   async function onPreparePaces() {
     if (!bookId) {
@@ -222,6 +269,58 @@ export default function BookOverviewPage() {
         </TabsContent>
 
         <TabsContent value="pace" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Assignment Generation</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {!assignmentGenerationStatus ? (
+                <p className="text-sm text-muted-foreground">
+                  Assignment generation status is unavailable for this book.
+                </p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <Badge variant="secondary">{assignmentGenerationStatus.status}</Badge>
+                    <span className="text-muted-foreground">
+                      {assignmentGenerationStatus.generatedSections} /{" "}
+                      {assignmentGenerationStatus.totalSections} sections generated
+                    </span>
+                  </div>
+
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full bg-foreground/70 transition-all"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          assignmentGenerationStatus.totalSections > 0
+                            ? Math.round(
+                                (assignmentGenerationStatus.generatedSections /
+                                  assignmentGenerationStatus.totalSections) *
+                                  100,
+                              )
+                            : 100,
+                        )}%`,
+                      }}
+                    />
+                  </div>
+
+                  {assignmentGenerationStatus.failedSections > 0 ? (
+                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                      {assignmentGenerationStatus.failedSections} section(s) are currently
+                      failed and queued for retry.
+                    </p>
+                  ) : null}
+
+                  <p className="text-xs text-muted-foreground">
+                    Updated {formatDateTime(assignmentGenerationStatus.updatedAt)}
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Pace Options</CardTitle>

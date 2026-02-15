@@ -24,6 +24,7 @@ import type {
   Assignment,
   Attempt,
   AttemptFeedback,
+  LatestAssignmentResult,
   TocNodeDetail,
 } from "@/lib/api/models";
 import { formatDateTime } from "@/lib/utils/date";
@@ -40,7 +41,9 @@ export default function TocNodePage() {
   }, [searchParams]);
 
   const [nodeDetail, setNodeDetail] = useState<TocNodeDetail | null>(null);
-  const [assignment, setAssignment] = useState<Assignment | null>(null);
+  const [assignmentResult, setAssignmentResult] = useState<LatestAssignmentResult | null>(
+    null,
+  );
   const [attemptsByQuestion, setAttemptsByQuestion] = useState<AttemptsByQuestion>({});
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
@@ -81,10 +84,10 @@ export default function TocNodePage() {
       ]);
 
       setNodeDetail(node);
-      setAssignment(latestAssignment);
+      setAssignmentResult(latestAssignment);
 
-      if (latestAssignment) {
-        await hydrateAttempts(latestAssignment.questions);
+      if (latestAssignment.state === "ready") {
+        await hydrateAttempts(latestAssignment.assignment.questions);
       } else {
         setAttemptsByQuestion({});
       }
@@ -100,6 +103,37 @@ export default function TocNodePage() {
   useEffect(() => {
     void loadPage();
   }, [loadPage]);
+
+  useEffect(() => {
+    if (!nodeId || assignmentResult?.state !== "pending") {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      void (async () => {
+        try {
+          const latest = await getLatestAssignment(nodeId);
+          setAssignmentResult((current) => {
+            if (current?.state === "pending" && latest.state === "ready") {
+              toast.success("Section assignment is ready.");
+            }
+
+            return latest;
+          });
+
+          if (latest.state === "ready") {
+            await hydrateAttempts(latest.assignment.questions);
+          }
+        } catch {
+          // Keep the current state and retry in the next poll tick.
+        }
+      })();
+    }, 9000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [assignmentResult, hydrateAttempts, nodeId]);
 
   async function onSubmitAnswer(questionId: string) {
     const answerText = answers[questionId]?.trim() ?? "";
@@ -173,6 +207,9 @@ export default function TocNodePage() {
   ];
   const breadcrumbHref = (targetNodeId: string) =>
     `/toc/${targetNodeId}?bookId=${nodeDetail.book.id}`;
+  const assignment = assignmentResult?.state === "ready" ? assignmentResult.assignment : null;
+  const pendingAssignment =
+    assignmentResult?.state === "pending" ? assignmentResult.pending : null;
 
   return (
     <section className="space-y-6">
@@ -212,15 +249,64 @@ export default function TocNodePage() {
           <CardTitle className="text-base">Assignment</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!assignment ? (
+          {!assignmentResult ? (
             <EmptyState
               title="Assignment unavailable"
-              description="No assignment exists for this section yet."
+              description="Assignment state is unavailable for this section."
             />
-          ) : (
+          ) : pendingAssignment ? (
+            <div className="space-y-4 rounded-md border p-4">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline">{pendingAssignment.sectionStatus}</Badge>
+                  <Badge variant="secondary">
+                    {pendingAssignment.assignmentGeneration.status}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">{pendingAssignment.message}</p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Generated {pendingAssignment.assignmentGeneration.generatedSections} /{" "}
+                  {pendingAssignment.assignmentGeneration.totalSections} sections
+                </p>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full bg-foreground/70 transition-all"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        pendingAssignment.assignmentGeneration.totalSections > 0
+                          ? Math.round(
+                              (pendingAssignment.assignmentGeneration.generatedSections /
+                                pendingAssignment.assignmentGeneration.totalSections) *
+                                100,
+                            )
+                          : 100,
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {pendingAssignment.assignmentGeneration.failedSections > 0 ? (
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  {pendingAssignment.assignmentGeneration.failedSections} section(s) are
+                  currently in failed state and retrying.
+                </p>
+              ) : null}
+
+              {pendingAssignment.nextRetryAt ? (
+                <p className="text-xs text-muted-foreground">
+                  Next retry: {formatDateTime(pendingAssignment.nextRetryAt)}
+                </p>
+              ) : null}
+            </div>
+          ) : assignment ? (
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Badge variant="secondary">Version {assignment.version}</Badge>
+                <Badge variant="secondary">{assignment.questions.length} questions</Badge>
                 <span>Generated {formatDateTime(assignment.createdAt)}</span>
               </div>
 
@@ -342,6 +428,11 @@ export default function TocNodePage() {
                 })}
               </div>
             </div>
+          ) : (
+            <EmptyState
+              title="Assignment unavailable"
+              description="Assignment state is unavailable for this section."
+            />
           )}
         </CardContent>
       </Card>
