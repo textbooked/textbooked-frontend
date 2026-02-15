@@ -20,8 +20,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Textbooked Frontend",
-  description: "Internal frontend UI for testing Textbooked backend flows.",
+  title: "Textbooked",
+  description: "Convert any textbook into structured lessons.",
 };
 
 export default function RootLayout({
