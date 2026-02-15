@@ -60,6 +60,7 @@ yarn lint
 - Google sign-in only.
 - JWT session strategy.
 - Session includes `session.backendToken` (HS256 token) used for backend Bearer auth.
+- After sign-in, frontend calls backend `GET /auth/me` to ensure the backend user row is synced/created.
 - API adapter automatically sends:
   - `Authorization: Bearer <session.backendToken>`
 

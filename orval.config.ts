@@ -5,9 +5,12 @@ import { defineConfig } from "orval";
 loadEnv({ path: ".env" });
 loadEnv({ path: ".env.local", override: true });
 
-const backendUrlRaw = process.env.NEXT_PUBLIC_BACKEND_URL;
+const backendUrlRaw =
+  process.env.ORVAL_BACKEND_URL ?? process.env.NEXT_PUBLIC_BACKEND_URL;
 if (!backendUrlRaw) {
-  throw new Error("Missing NEXT_PUBLIC_BACKEND_URL for Orval code generation.");
+  throw new Error(
+    "Missing ORVAL_BACKEND_URL or NEXT_PUBLIC_BACKEND_URL for Orval code generation.",
+  );
 }
 
 const backendUrl = backendUrlRaw.replace(/\/$/, "");
