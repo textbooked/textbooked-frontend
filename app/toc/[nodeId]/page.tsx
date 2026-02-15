@@ -31,6 +31,7 @@ import { formatDateTime } from "@/lib/utils/date";
 import { parseOptionalUuid, parseRequiredUuid } from "@/lib/utils/uuid";
 
 type AttemptsByQuestion = Record<string, Attempt[]>;
+const ANSWER_DRAFTS_STORAGE_PREFIX = "textbooked.answerDrafts";
 
 export default function TocNodePage() {
   const params = useParams<{ nodeId: string }>();
@@ -46,11 +47,16 @@ export default function TocNodePage() {
   );
   const [attemptsByQuestion, setAttemptsByQuestion] = useState<AttemptsByQuestion>({});
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [loadedDraftsKey, setLoadedDraftsKey] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submittingQuestionId, setSubmittingQuestionId] = useState<string | null>(null);
   const [gradingAttemptId, setGradingAttemptId] = useState<string | null>(null);
+  const answerDraftStorageKey = useMemo(
+    () => (nodeId ? buildAnswerDraftStorageKey(nodeId) : null),
+    [nodeId],
+  );
 
   const hydrateAttempts = useCallback(async (questions: Assignment["questions"]) => {
     const entries = await Promise.all(
@@ -103,6 +109,25 @@ export default function TocNodePage() {
   useEffect(() => {
     void loadPage();
   }, [loadPage]);
+
+  useEffect(() => {
+    if (!answerDraftStorageKey) {
+      setAnswers({});
+      setLoadedDraftsKey(null);
+      return;
+    }
+
+    setAnswers(readAnswerDrafts(answerDraftStorageKey));
+    setLoadedDraftsKey(answerDraftStorageKey);
+  }, [answerDraftStorageKey]);
+
+  useEffect(() => {
+    if (!answerDraftStorageKey || loadedDraftsKey !== answerDraftStorageKey) {
+      return;
+    }
+
+    writeAnswerDrafts(answerDraftStorageKey, answers);
+  }, [answerDraftStorageKey, answers, loadedDraftsKey]);
 
   useEffect(() => {
     if (!nodeId || assignmentResult?.state !== "pending") {
@@ -511,4 +536,60 @@ function readFeedback(attempt: Attempt): AttemptFeedback | null {
   }
 
   return null;
+}
+
+function buildAnswerDraftStorageKey(nodeId: string): string {
+  return `${ANSWER_DRAFTS_STORAGE_PREFIX}.${nodeId}`;
+}
+
+function readAnswerDrafts(storageKey: string): Record<string, string> {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  const raw = window.localStorage.getItem(storageKey);
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+
+    const entries = Object.entries(parsed).filter(
+      (entry): entry is [string, string] =>
+        typeof entry[0] === "string" && typeof entry[1] === "string",
+    );
+
+    return Object.fromEntries(entries);
+  } catch {
+    return {};
+  }
+}
+
+function writeAnswerDrafts(
+  storageKey: string,
+  drafts: Record<string, string>,
+): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const nonEmptyDrafts = Object.fromEntries(
+    Object.entries(drafts).filter(
+      (entry): entry is [string, string] =>
+        typeof entry[0] === "string" &&
+        typeof entry[1] === "string" &&
+        entry[1].length > 0,
+    ),
+  );
+
+  if (Object.keys(nonEmptyDrafts).length === 0) {
+    window.localStorage.removeItem(storageKey);
+    return;
+  }
+
+  window.localStorage.setItem(storageKey, JSON.stringify(nonEmptyDrafts));
 }
