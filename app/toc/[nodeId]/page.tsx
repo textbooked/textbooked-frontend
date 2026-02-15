@@ -18,7 +18,6 @@ import {
   getLatestAssignment,
   getTocNode,
   gradeAttempt,
-  listAttempts,
 } from "@/lib/api/endpoints";
 import type {
   Assignment,
@@ -58,19 +57,12 @@ export default function TocNodePage() {
     [nodeId],
   );
 
-  const hydrateAttempts = useCallback(async (questions: Assignment["questions"]) => {
-    const entries = await Promise.all(
-      questions.map(async (question) => {
-        try {
-          const attempts = await listAttempts(question.id);
-          return [question.id, attempts] as const;
-        } catch {
-          return [question.id, []] as const;
-        }
-      }),
+  const hydrateAttempts = useCallback((questions: Assignment["questions"]) => {
+    setAttemptsByQuestion(
+      Object.fromEntries(
+        questions.map((question) => [question.id, sortAttempts(question.attempts ?? [])]),
+      ),
     );
-
-    setAttemptsByQuestion(Object.fromEntries(entries));
   }, []);
 
   const loadPage = useCallback(async () => {
@@ -93,7 +85,7 @@ export default function TocNodePage() {
       setAssignmentResult(latestAssignment);
 
       if (latestAssignment.state === "ready") {
-        await hydrateAttempts(latestAssignment.assignment.questions);
+        hydrateAttempts(latestAssignment.assignment.questions);
       } else {
         setAttemptsByQuestion({});
       }
@@ -160,7 +152,7 @@ export default function TocNodePage() {
           });
 
           if (latest.state === "ready") {
-            await hydrateAttempts(latest.assignment.questions);
+            hydrateAttempts(latest.assignment.questions);
           }
         } catch {
           // Keep the current state and retry in the next poll tick.
@@ -183,11 +175,13 @@ export default function TocNodePage() {
     setSubmittingQuestionId(questionId);
 
     try {
-      await createAttempt(questionId, answerText);
-      const attempts = await listAttempts(questionId);
+      const createdAttempt = await createAttempt(questionId, answerText);
       setAttemptsByQuestion((current) => ({
         ...current,
-        [questionId]: attempts,
+        [questionId]: sortAttempts([
+          createdAttempt,
+          ...(current[questionId] ?? []).filter((attempt) => attempt.id !== createdAttempt.id),
+        ]),
       }));
       setAnswers((current) => ({ ...current, [questionId]: "" }));
       toast.success("Answer submitted.");
@@ -203,11 +197,20 @@ export default function TocNodePage() {
     setGradingAttemptId(attemptId);
 
     try {
-      await gradeAttempt(attemptId);
-      const attempts = await listAttempts(questionId);
+      const gradedAttempt = await gradeAttempt(attemptId);
       setAttemptsByQuestion((current) => ({
         ...current,
-        [questionId]: attempts,
+        [questionId]: sortAttempts((() => {
+          const existing = current[questionId] ?? [];
+          const hasAttempt = existing.some((attempt) => attempt.id === gradedAttempt.id);
+          if (!hasAttempt) {
+            return [gradedAttempt, ...existing];
+          }
+
+          return existing.map((attempt) =>
+            attempt.id === gradedAttempt.id ? { ...attempt, ...gradedAttempt } : attempt,
+          );
+        })()),
       }));
       toast.success("Attempt graded.");
     } catch (err: unknown) {
@@ -592,4 +595,14 @@ function writeAnswerDrafts(
   }
 
   window.localStorage.setItem(storageKey, JSON.stringify(nonEmptyDrafts));
+}
+
+function sortAttempts(attempts: Attempt[]): Attempt[] {
+  return [...attempts].sort((a, b) => {
+    if (a.createdAt === b.createdAt) {
+      return b.id.localeCompare(a.id);
+    }
+
+    return b.createdAt.localeCompare(a.createdAt);
+  });
 }

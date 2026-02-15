@@ -174,6 +174,23 @@ export type PlanDetail = {
   progress?: PlanProgress;
 };
 
+export type AttemptFeedback = {
+  promptVersion?: string;
+  hits?: string[];
+  misses?: string[];
+  followupProbe?: string | null;
+};
+
+export type Attempt = {
+  id: string;
+  questionId: string;
+  answerText: string;
+  score: number | null;
+  feedbackJson?: string | null;
+  feedback?: AttemptFeedback | null;
+  createdAt: string;
+};
+
 export type AssignmentQuestion = {
   id: string;
   assignmentId: string;
@@ -182,6 +199,7 @@ export type AssignmentQuestion = {
   rubricJson?: string;
   rubric?: unknown;
   createdAt: string;
+  attempts?: Attempt[];
 };
 
 export type Assignment = {
@@ -216,20 +234,3 @@ export type LatestAssignmentResult =
       state: "pending";
       pending: AssignmentPendingState;
     };
-
-export type AttemptFeedback = {
-  promptVersion?: string;
-  hits?: string[];
-  misses?: string[];
-  followupProbe?: string | null;
-};
-
-export type Attempt = {
-  id: string;
-  questionId: string;
-  answerText: string;
-  score: number | null;
-  feedbackJson?: string | null;
-  feedback?: AttemptFeedback | null;
-  createdAt: string;
-};
