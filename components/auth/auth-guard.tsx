@@ -1,12 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { LogIn } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 
+import { AuthLanding } from "@/components/auth/auth-landing";
 import { LoadingState } from "@/components/loading-state";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type AuthGuardProps = {
   children: ReactNode;
@@ -19,26 +17,17 @@ export function AuthGuard({ children }: AuthGuardProps) {
     status === "loading" ||
     (status === "authenticated" && !session?.backendToken)
   ) {
-    return <LoadingState label="Checking authentication..." />;
+    return (
+      <div className="min-h-screen bg-muted/30 p-4">
+        <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center">
+          <LoadingState label="Checking authentication..." />
+        </div>
+      </div>
+    );
   }
 
   if (status !== "authenticated") {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Please sign in</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Sign in with Google to test authenticated backend flows.
-          </p>
-          <Button type="button" onClick={() => void signIn("google")}>
-            <LogIn className="size-4" />
-            Sign in with Google
-          </Button>
-        </CardContent>
-      </Card>
-    );
+    return <AuthLanding onContinue={() => void signIn("google")} />;
   }
 
   return <>{children}</>;
