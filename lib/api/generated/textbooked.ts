@@ -9,11 +9,53 @@ import type {
   CreateAttemptDto,
   CreateBookDto,
   CreatePlanDto,
+  CurrentUserDto,
   HealthControllerGetHealth200,
+  UpdatePlanItemStatusDto,
   UploadTocDto
 } from './models';
 
 import { orvalFetcher } from '../orval-mutator';
+
+/**
+ * @summary Get current authenticated user
+ */
+export type authControllerGetMeResponse200 = {
+  data: CurrentUserDto
+  status: 200
+}
+
+export type authControllerGetMeResponse401 = {
+  data: void
+  status: 401
+}
+    
+export type authControllerGetMeResponseComposite = authControllerGetMeResponse200 | authControllerGetMeResponse401;
+    
+export type authControllerGetMeResponse = authControllerGetMeResponseComposite & {
+  headers: Headers;
+}
+
+export const getAuthControllerGetMeUrl = () => {
+
+
+  
+
+  return `/auth/me`
+}
+
+export const authControllerGetMe = async ( options?: RequestInit): Promise<authControllerGetMeResponse> => {
+  
+  return orvalFetcher<authControllerGetMeResponse>(getAuthControllerGetMeUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
 
 /**
  * @summary Health check
@@ -40,6 +82,41 @@ export const getHealthControllerGetHealthUrl = () => {
 export const healthControllerGetHealth = async ( options?: RequestInit): Promise<healthControllerGetHealthResponse> => {
   
   return orvalFetcher<healthControllerGetHealthResponse>(getHealthControllerGetHealthUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary List books
+ */
+export type booksControllerListResponse200 = {
+  data: void
+  status: 200
+}
+    
+export type booksControllerListResponseComposite = booksControllerListResponse200;
+    
+export type booksControllerListResponse = booksControllerListResponseComposite & {
+  headers: Headers;
+}
+
+export const getBooksControllerListUrl = () => {
+
+
+  
+
+  return `/books`
+}
+
+export const booksControllerList = async ( options?: RequestInit): Promise<booksControllerListResponse> => {
+  
+  return orvalFetcher<booksControllerListResponse>(getBooksControllerListUrl(),
   {      
     ...options,
     method: 'GET'
@@ -110,7 +187,7 @@ export type booksControllerGetByIdResponse = booksControllerGetByIdResponseCompo
   headers: Headers;
 }
 
-export const getBooksControllerGetByIdUrl = (id: number,) => {
+export const getBooksControllerGetByIdUrl = (id: string,) => {
 
 
   
@@ -118,7 +195,7 @@ export const getBooksControllerGetByIdUrl = (id: number,) => {
   return `/books/${id}`
 }
 
-export const booksControllerGetById = async (id: number, options?: RequestInit): Promise<booksControllerGetByIdResponse> => {
+export const booksControllerGetById = async (id: string, options?: RequestInit): Promise<booksControllerGetByIdResponse> => {
   
   return orvalFetcher<booksControllerGetByIdResponse>(getBooksControllerGetByIdUrl(id),
   {      
@@ -150,7 +227,7 @@ export type tocControllerUploadResponse = tocControllerUploadResponseComposite &
   headers: Headers;
 }
 
-export const getTocControllerUploadUrl = (id: number,) => {
+export const getTocControllerUploadUrl = (id: string,) => {
 
 
   
@@ -158,7 +235,7 @@ export const getTocControllerUploadUrl = (id: number,) => {
   return `/books/${id}/toc`
 }
 
-export const tocControllerUpload = async (id: number,
+export const tocControllerUpload = async (id: string,
     uploadTocDto: UploadTocDto, options?: RequestInit): Promise<tocControllerUploadResponse> => {
   
   return orvalFetcher<tocControllerUploadResponse>(getTocControllerUploadUrl(id),
@@ -192,7 +269,7 @@ export type tocControllerGetByBookResponse = tocControllerGetByBookResponseCompo
   headers: Headers;
 }
 
-export const getTocControllerGetByBookUrl = (id: number,) => {
+export const getTocControllerGetByBookUrl = (id: string,) => {
 
 
   
@@ -200,9 +277,49 @@ export const getTocControllerGetByBookUrl = (id: number,) => {
   return `/books/${id}/toc`
 }
 
-export const tocControllerGetByBook = async (id: number, options?: RequestInit): Promise<tocControllerGetByBookResponse> => {
+export const tocControllerGetByBook = async (id: string, options?: RequestInit): Promise<tocControllerGetByBookResponse> => {
   
   return orvalFetcher<tocControllerGetByBookResponse>(getTocControllerGetByBookUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Get a ToC node by ID
+ */
+export type tocNodesControllerGetByIdResponse200 = {
+  data: void
+  status: 200
+}
+
+export type tocNodesControllerGetByIdResponse404 = {
+  data: void
+  status: 404
+}
+    
+export type tocNodesControllerGetByIdResponseComposite = tocNodesControllerGetByIdResponse200 | tocNodesControllerGetByIdResponse404;
+    
+export type tocNodesControllerGetByIdResponse = tocNodesControllerGetByIdResponseComposite & {
+  headers: Headers;
+}
+
+export const getTocNodesControllerGetByIdUrl = (nodeId: string,) => {
+
+
+  
+
+  return `/toc/${nodeId}`
+}
+
+export const tocNodesControllerGetById = async (nodeId: string, options?: RequestInit): Promise<tocNodesControllerGetByIdResponse> => {
+  
+  return orvalFetcher<tocNodesControllerGetByIdResponse>(getTocNodesControllerGetByIdUrl(nodeId),
   {      
     ...options,
     method: 'GET'
@@ -232,7 +349,7 @@ export type pacesControllerGenerateResponse = pacesControllerGenerateResponseCom
   headers: Headers;
 }
 
-export const getPacesControllerGenerateUrl = (id: number,) => {
+export const getPacesControllerGenerateUrl = (id: string,) => {
 
 
   
@@ -240,7 +357,7 @@ export const getPacesControllerGenerateUrl = (id: number,) => {
   return `/books/${id}/paces/generate`
 }
 
-export const pacesControllerGenerate = async (id: number, options?: RequestInit): Promise<pacesControllerGenerateResponse> => {
+export const pacesControllerGenerate = async (id: string, options?: RequestInit): Promise<pacesControllerGenerateResponse> => {
   
   return orvalFetcher<pacesControllerGenerateResponse>(getPacesControllerGenerateUrl(id),
   {      
@@ -272,7 +389,7 @@ export type plansControllerCreateResponse = plansControllerCreateResponseComposi
   headers: Headers;
 }
 
-export const getPlansControllerCreateUrl = (bookId: number,) => {
+export const getPlansControllerCreateUrl = (bookId: string,) => {
 
 
   
@@ -280,7 +397,7 @@ export const getPlansControllerCreateUrl = (bookId: number,) => {
   return `/books/${bookId}/plans`
 }
 
-export const plansControllerCreate = async (bookId: number,
+export const plansControllerCreate = async (bookId: string,
     createPlanDto: CreatePlanDto, options?: RequestInit): Promise<plansControllerCreateResponse> => {
   
   return orvalFetcher<plansControllerCreateResponse>(getPlansControllerCreateUrl(bookId),
@@ -314,7 +431,7 @@ export type plansControllerGetByIdResponse = plansControllerGetByIdResponseCompo
   headers: Headers;
 }
 
-export const getPlansControllerGetByIdUrl = (id: number,) => {
+export const getPlansControllerGetByIdUrl = (id: string,) => {
 
 
   
@@ -322,7 +439,7 @@ export const getPlansControllerGetByIdUrl = (id: number,) => {
   return `/plans/${id}`
 }
 
-export const plansControllerGetById = async (id: number, options?: RequestInit): Promise<plansControllerGetByIdResponse> => {
+export const plansControllerGetById = async (id: string, options?: RequestInit): Promise<plansControllerGetByIdResponse> => {
   
   return orvalFetcher<plansControllerGetByIdResponse>(getPlansControllerGetByIdUrl(id),
   {      
@@ -330,6 +447,48 @@ export const plansControllerGetById = async (id: number, options?: RequestInit):
     method: 'GET'
     
     
+  }
+);}
+
+
+
+/**
+ * @summary Update status for a plan item
+ */
+export type plansControllerUpdateStatusResponse200 = {
+  data: void
+  status: 200
+}
+
+export type plansControllerUpdateStatusResponse400 = {
+  data: void
+  status: 400
+}
+    
+export type plansControllerUpdateStatusResponseComposite = plansControllerUpdateStatusResponse200 | plansControllerUpdateStatusResponse400;
+    
+export type plansControllerUpdateStatusResponse = plansControllerUpdateStatusResponseComposite & {
+  headers: Headers;
+}
+
+export const getPlansControllerUpdateStatusUrl = (id: string,) => {
+
+
+  
+
+  return `/plan-items/${id}/status`
+}
+
+export const plansControllerUpdateStatus = async (id: string,
+    updatePlanItemStatusDto: UpdatePlanItemStatusDto, options?: RequestInit): Promise<plansControllerUpdateStatusResponse> => {
+  
+  return orvalFetcher<plansControllerUpdateStatusResponse>(getPlansControllerUpdateStatusUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updatePlanItemStatusDto,)
   }
 );}
 
@@ -354,7 +513,7 @@ export type assignmentsControllerGenerateResponse = assignmentsControllerGenerat
   headers: Headers;
 }
 
-export const getAssignmentsControllerGenerateUrl = (nodeId: number,) => {
+export const getAssignmentsControllerGenerateUrl = (nodeId: string,) => {
 
 
   
@@ -362,7 +521,7 @@ export const getAssignmentsControllerGenerateUrl = (nodeId: number,) => {
   return `/toc/${nodeId}/assignments/generate`
 }
 
-export const assignmentsControllerGenerate = async (nodeId: number, options?: RequestInit): Promise<assignmentsControllerGenerateResponse> => {
+export const assignmentsControllerGenerate = async (nodeId: string, options?: RequestInit): Promise<assignmentsControllerGenerateResponse> => {
   
   return orvalFetcher<assignmentsControllerGenerateResponse>(getAssignmentsControllerGenerateUrl(nodeId),
   {      
@@ -394,7 +553,7 @@ export type assignmentsControllerGetLatestResponse = assignmentsControllerGetLat
   headers: Headers;
 }
 
-export const getAssignmentsControllerGetLatestUrl = (nodeId: number,) => {
+export const getAssignmentsControllerGetLatestUrl = (nodeId: string,) => {
 
 
   
@@ -402,7 +561,7 @@ export const getAssignmentsControllerGetLatestUrl = (nodeId: number,) => {
   return `/toc/${nodeId}/assignments/latest`
 }
 
-export const assignmentsControllerGetLatest = async (nodeId: number, options?: RequestInit): Promise<assignmentsControllerGetLatestResponse> => {
+export const assignmentsControllerGetLatest = async (nodeId: string, options?: RequestInit): Promise<assignmentsControllerGetLatestResponse> => {
   
   return orvalFetcher<assignmentsControllerGetLatestResponse>(getAssignmentsControllerGetLatestUrl(nodeId),
   {      
@@ -434,7 +593,7 @@ export type attemptsControllerCreateResponse = attemptsControllerCreateResponseC
   headers: Headers;
 }
 
-export const getAttemptsControllerCreateUrl = (id: number,) => {
+export const getAttemptsControllerCreateUrl = (id: string,) => {
 
 
   
@@ -442,7 +601,7 @@ export const getAttemptsControllerCreateUrl = (id: number,) => {
   return `/questions/${id}/attempts`
 }
 
-export const attemptsControllerCreate = async (id: number,
+export const attemptsControllerCreate = async (id: string,
     createAttemptDto: CreateAttemptDto, options?: RequestInit): Promise<attemptsControllerCreateResponse> => {
   
   return orvalFetcher<attemptsControllerCreateResponse>(getAttemptsControllerCreateUrl(id),
@@ -452,6 +611,46 @@ export const attemptsControllerCreate = async (id: number,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createAttemptDto,)
+  }
+);}
+
+
+
+/**
+ * @summary List attempts for a question
+ */
+export type attemptsControllerGetAttemptsByQuestionResponse200 = {
+  data: void
+  status: 200
+}
+
+export type attemptsControllerGetAttemptsByQuestionResponse401 = {
+  data: void
+  status: 401
+}
+    
+export type attemptsControllerGetAttemptsByQuestionResponseComposite = attemptsControllerGetAttemptsByQuestionResponse200 | attemptsControllerGetAttemptsByQuestionResponse401;
+    
+export type attemptsControllerGetAttemptsByQuestionResponse = attemptsControllerGetAttemptsByQuestionResponseComposite & {
+  headers: Headers;
+}
+
+export const getAttemptsControllerGetAttemptsByQuestionUrl = (id: string,) => {
+
+
+  
+
+  return `/questions/${id}/attempts`
+}
+
+export const attemptsControllerGetAttemptsByQuestion = async (id: string, options?: RequestInit): Promise<attemptsControllerGetAttemptsByQuestionResponse> => {
+  
+  return orvalFetcher<attemptsControllerGetAttemptsByQuestionResponse>(getAttemptsControllerGetAttemptsByQuestionUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 
@@ -476,7 +675,7 @@ export type attemptsControllerGradeResponse = attemptsControllerGradeResponseCom
   headers: Headers;
 }
 
-export const getAttemptsControllerGradeUrl = (id: number,) => {
+export const getAttemptsControllerGradeUrl = (id: string,) => {
 
 
   
@@ -484,7 +683,7 @@ export const getAttemptsControllerGradeUrl = (id: number,) => {
   return `/attempts/${id}/grade`
 }
 
-export const attemptsControllerGrade = async (id: number, options?: RequestInit): Promise<attemptsControllerGradeResponse> => {
+export const attemptsControllerGrade = async (id: string, options?: RequestInit): Promise<attemptsControllerGradeResponse> => {
   
   return orvalFetcher<attemptsControllerGradeResponse>(getAttemptsControllerGradeUrl(id),
   {      

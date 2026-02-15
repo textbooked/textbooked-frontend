@@ -6,9 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface CreatePlanDto {
-  /** ID of a generated pace option for this book */
-  paceOptionId: string;
-  /** Plan start date (ISO date) */
-  startDate: string;
-}
+/**
+ * @nullable
+ */
+export type CurrentUserDtoImage = { [key: string]: unknown } | null;
