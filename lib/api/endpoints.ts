@@ -21,6 +21,8 @@ import type {
   BookIntakeFinalizeResult,
   BookDetail,
   BookMaterialsGenerationStatus,
+  BookOverviewPayload,
+  BookOverviewSummary,
   BookProgressPayload,
   BookProgressSummary,
   BookSummary,
@@ -32,6 +34,7 @@ import type {
   MaterialSession,
   MaterialSet,
   MaterialType,
+  OverviewMetricPayload,
   PaceGenerationResponse,
   PlanDetail,
   PlanItem,
@@ -334,6 +337,102 @@ export async function getLatestPlanForBook(
 
     throw error;
   }
+}
+
+export function pickCurrentPlanItem(plan: PlanDetail | null): PlanItem | null {
+  if (!plan || plan.planItems.length === 0) {
+    return null;
+  }
+
+  const sorted = [...plan.planItems].sort(comparePlanItemByDateAsc);
+  const nextTodo = sorted.find((item) => item.status === "TODO");
+  if (nextTodo) {
+    return nextTodo;
+  }
+
+  const doneItems = sorted.filter((item) => item.status === "DONE");
+  if (doneItems.length > 0) {
+    return doneItems.sort(comparePlanItemByDateDesc)[0] ?? null;
+  }
+
+  return sorted[0] ?? null;
+}
+
+export function deriveBookOverviewSummary(
+  book: BookDetail,
+  plan: PlanDetail | null,
+): BookOverviewSummary {
+  const progress = normalizeMaybeBookProgress(book.progress) ?? defaultBookProgress();
+  const rawOverview = normalizeMaybeBookOverview(book.overview);
+  const planItems = plan?.planItems ?? [];
+  const planDoneCount = planItems.filter((item) => item.status === "DONE").length;
+  const currentPlanItem = pickCurrentPlanItem(plan);
+  const currentTitleFromPlan = currentPlanItem?.tocNode.title ?? null;
+
+  const sectionsFromPlan = deriveSectionMetric(planItems);
+  const assignmentsFromPlan = deriveTypeMetric(planItems, "ASSIGNMENT");
+  const reviewsFromPlan = deriveTypeMetric(planItems, "REVIEW");
+  const testsFromPlan = deriveTypeMetric(planItems, "TEST");
+
+  const sections = resolveOverviewMetric(
+    rawOverview?.sections,
+    rawOverview?.completedSections,
+    rawOverview?.totalSections,
+    sectionsFromPlan.completed,
+    sectionsFromPlan.total,
+  );
+  const assignments = resolveOverviewMetric(
+    rawOverview?.assignments,
+    rawOverview?.completedAssignments,
+    rawOverview?.totalAssignments,
+    assignmentsFromPlan.completed,
+    assignmentsFromPlan.total,
+  );
+  const reviews = resolveOverviewMetric(
+    rawOverview?.reviews,
+    rawOverview?.completedReviews,
+    rawOverview?.totalReviews,
+    reviewsFromPlan.completed,
+    reviewsFromPlan.total,
+  );
+  const tests = resolveOverviewMetric(
+    rawOverview?.tests,
+    rawOverview?.completedTests,
+    rawOverview?.totalTests,
+    testsFromPlan.completed,
+    testsFromPlan.total,
+  );
+  const questions = resolveOptionalOverviewMetric(
+    rawOverview?.questions,
+    rawOverview?.completedQuestions,
+    rawOverview?.totalQuestions,
+  );
+  const fallbackOverallPercent =
+    planItems.length > 0 ? Math.round((planDoneCount / planItems.length) * 100) : 0;
+  const overallPercent = clampPercent(
+    typeof rawOverview?.overallPercent === "number"
+      ? rawOverview.overallPercent
+      : progress.percentComplete > 0 || progress.totalItems > 0
+        ? progress.percentComplete
+        : fallbackOverallPercent,
+  );
+  const currentChapterOrSection =
+    firstNonEmptyString([
+      rawOverview?.currentChapterOrSection,
+      rawOverview?.currentNodeTitle,
+      progress.currentChapterOrSection,
+      currentTitleFromPlan,
+    ]) ?? "Not started yet";
+
+  return {
+    overallPercent,
+    sections,
+    assignments,
+    reviews,
+    tests,
+    questions,
+    currentChapterOrSection,
+  };
 }
 
 export async function updatePlanItemStatus(
@@ -759,6 +858,126 @@ function updateCachedAttempt(attempt: Attempt): void {
   });
 }
 
+function comparePlanItemByDateAsc(a: PlanItem, b: PlanItem): number {
+  const byDate = a.date.localeCompare(b.date);
+  if (byDate !== 0) {
+    return byDate;
+  }
+
+  const byCreatedAt = a.createdAt.localeCompare(b.createdAt);
+  if (byCreatedAt !== 0) {
+    return byCreatedAt;
+  }
+
+  return a.id.localeCompare(b.id);
+}
+
+function comparePlanItemByDateDesc(a: PlanItem, b: PlanItem): number {
+  return comparePlanItemByDateAsc(b, a);
+}
+
+function deriveSectionMetric(planItems: PlanItem[]) {
+  const byNode = new Map<string, PlanItem[]>();
+
+  for (const item of planItems) {
+    const existing = byNode.get(item.tocNodeId);
+    if (existing) {
+      existing.push(item);
+    } else {
+      byNode.set(item.tocNodeId, [item]);
+    }
+  }
+
+  const total = byNode.size;
+  const completed = [...byNode.values()].filter((items) =>
+    items.every((item) => item.status === "DONE"),
+  ).length;
+
+  return toMetricSummary(completed, total);
+}
+
+function deriveTypeMetric(
+  planItems: PlanItem[],
+  type: PlanItem["type"],
+) {
+  const matching = planItems.filter((item) => item.type === type);
+  return toMetricSummary(
+    matching.filter((item) => item.status === "DONE").length,
+    matching.length,
+  );
+}
+
+function normalizeMaybeBookOverview(
+  overview: BookOverviewPayload | null | undefined,
+): BookOverviewPayload | null {
+  if (!overview || typeof overview !== "object") {
+    return null;
+  }
+
+  return overview;
+}
+
+function resolveOverviewMetric(
+  metricPayload: OverviewMetricPayload | null | undefined,
+  completedScalar: number | null | undefined,
+  totalScalar: number | null | undefined,
+  fallbackCompleted: number,
+  fallbackTotal: number,
+) {
+  const totalFromPayload =
+    firstFiniteNumber([
+      metricPayload?.total,
+      totalScalar,
+    ]) ?? fallbackTotal;
+  const completedFromPayload =
+    firstFiniteNumber([
+      metricPayload?.completed,
+      completedScalar,
+    ]) ?? fallbackCompleted;
+  const percentFromPayload = firstFiniteNumber([
+    metricPayload?.percentComplete,
+  ]);
+
+  const summary = toMetricSummary(completedFromPayload, totalFromPayload);
+  if (typeof percentFromPayload === "number") {
+    return {
+      ...summary,
+      percentComplete: clampPercent(percentFromPayload),
+    };
+  }
+
+  return summary;
+}
+
+function resolveOptionalOverviewMetric(
+  metricPayload: OverviewMetricPayload | null | undefined,
+  completedScalar: number | null | undefined,
+  totalScalar: number | null | undefined,
+) {
+  const hasMetricPayload = Boolean(metricPayload && typeof metricPayload === "object");
+  const hasCompletedScalar = typeof completedScalar === "number";
+  const hasTotalScalar = typeof totalScalar === "number";
+
+  if (!hasMetricPayload && !hasCompletedScalar && !hasTotalScalar) {
+    return null;
+  }
+
+  return resolveOverviewMetric(metricPayload, completedScalar, totalScalar, 0, 0);
+}
+
+function toMetricSummary(completed: number, total: number) {
+  const safeCompleted = clampNonNegative(completed);
+  const safeTotal = clampNonNegative(total);
+  const safeCappedCompleted = safeTotal > 0 ? Math.min(safeCompleted, safeTotal) : safeCompleted;
+
+  return {
+    completed: safeCappedCompleted,
+    total: safeTotal,
+    percentComplete:
+      safeTotal > 0 ? clampPercent((safeCappedCompleted / safeTotal) * 100) : 0,
+  };
+}
+
 function normalizeMaybeBookProgress(
   progress: BookProgressPayload | null | undefined,
 ): BookProgressSummary | null {
@@ -853,6 +1072,16 @@ function firstNonEmptyString(values: unknown[]): string | null {
 function firstUuid(values: unknown[]): string | null {
   for (const value of values) {
     if (isUuid(value)) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function firstFiniteNumber(values: unknown[]): number | null {
+  for (const value of values) {
+    if (typeof value === "number" && Number.isFinite(value)) {
       return value;
     }
   }

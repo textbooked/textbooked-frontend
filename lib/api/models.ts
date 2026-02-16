@@ -38,6 +38,49 @@ export type BookProgressSummary = {
   currentPlanId: string | null;
 };
 
+export type OverviewMetricPayload = {
+  completed?: number | null;
+  total?: number | null;
+  percentComplete?: number | null;
+};
+
+export type BookOverviewPayload = {
+  overallPercent?: number | null;
+  completedSections?: number | null;
+  totalSections?: number | null;
+  completedAssignments?: number | null;
+  totalAssignments?: number | null;
+  completedReviews?: number | null;
+  totalReviews?: number | null;
+  completedTests?: number | null;
+  totalTests?: number | null;
+  completedQuestions?: number | null;
+  totalQuestions?: number | null;
+  currentNodeTitle?: string | null;
+  currentChapterOrSection?: string | null;
+  sections?: OverviewMetricPayload | null;
+  assignments?: OverviewMetricPayload | null;
+  reviews?: OverviewMetricPayload | null;
+  tests?: OverviewMetricPayload | null;
+  questions?: OverviewMetricPayload | null;
+};
+
+export type OverviewMetricSummary = {
+  completed: number;
+  total: number;
+  percentComplete: number;
+};
+
+export type BookOverviewSummary = {
+  overallPercent: number;
+  sections: OverviewMetricSummary;
+  assignments: OverviewMetricSummary;
+  reviews: OverviewMetricSummary;
+  tests: OverviewMetricSummary;
+  questions: OverviewMetricSummary | null;
+  currentChapterOrSection: string;
+};
+
 export type BookSummary = {
   id: string;
   title: string;
@@ -45,6 +88,7 @@ export type BookSummary = {
   coverUrl: string | null;
   createdAt: string;
   progress?: BookProgressPayload | null;
+  overview?: BookOverviewPayload | null;
 };
 
 export type LibraryBookRow = Omit<BookSummary, "progress"> & {
