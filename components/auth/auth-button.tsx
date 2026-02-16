@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { CircleHelp, LogOut, Settings, UserCircle2 } from "lucide-react";
+import { CircleHelp, LogOut, Moon, Settings, Sun, UserCircle2 } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
 
+import { useTheme } from "@/components/theme/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ import {
 
 export function AuthButton() {
   const { data: session, status } = useSession();
+  const { theme, toggleTheme } = useTheme();
 
   if (status === "loading") {
     return (
@@ -87,6 +89,11 @@ export function AuthButton() {
             <CircleHelp className="size-4" />
             Help
           </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem onSelect={() => toggleTheme()}>
+          {theme === "dark" ? <Moon className="size-4" /> : <Sun className="size-4" />}
+          Theme: {theme === "dark" ? "Dark" : "Light"}
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
