@@ -1,7 +1,21 @@
 export type PlanItemType = "READ" | "ASSIGNMENT" | "TEST" | "REVIEW";
 
 export type PlanItemStatus = "TODO" | "DONE";
-export type AssignmentGenerationStatus = "PENDING" | "RUNNING" | "READY" | "PARTIAL_FAILED";
+export type AssignmentGenerationStatus =
+  | "PENDING"
+  | "RUNNING"
+  | "READY"
+  | "PARTIAL_FAILED";
+export type MaterialGenerationStatus = AssignmentGenerationStatus;
+
+export type MaterialType = "ASSIGNMENT" | "REVIEW" | "TEST";
+export type MaterialQuestionFormat = "MCQ" | "WRITTEN";
+export type MaterialSessionStatus =
+  | "IN_PROGRESS"
+  | "SUBMITTED"
+  | "GRADING"
+  | "GRADED"
+  | "EXPIRED_AUTO_SUBMITTED";
 
 export type BookProgressPayload = {
   doneItems?: number | null;
@@ -82,6 +96,7 @@ export type BookIntakeFinalizeResult = {
     totalOptions: number;
   };
   assignmentGeneration: BookAssignmentGenerationStatus;
+  materialsGeneration?: BookMaterialsGenerationStatus;
 };
 
 export type BookAssignmentGenerationStatus = {
@@ -90,6 +105,22 @@ export type BookAssignmentGenerationStatus = {
   totalSections: number;
   generatedSections: number;
   failedSections: number;
+  updatedAt: string;
+};
+
+export type MaterialTypeProgress = {
+  type: MaterialType;
+  totalSections: number;
+  generatedSections: number;
+  pendingSections: number;
+  runningSections: number;
+  failedSections: number;
+};
+
+export type BookMaterialsGenerationStatus = {
+  bookId: string;
+  status: MaterialGenerationStatus;
+  byType: Record<MaterialType, MaterialTypeProgress>;
   updatedAt: string;
 };
 
@@ -238,3 +269,92 @@ export type LatestAssignmentResult =
       state: "pending";
       pending: AssignmentPendingState;
     };
+
+export type MaterialQuestion = {
+  id: string;
+  materialSetId: string;
+  order: number;
+  format: MaterialQuestionFormat;
+  prompt: string;
+  options: string[] | null;
+  rubric: unknown;
+  maxPoints: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MaterialResponse = {
+  id: string;
+  questionId: string;
+  selectedOptionIndex: number | null;
+  answerText: string | null;
+  scoreRaw: number | null;
+  maxRaw: number | null;
+  feedback: unknown;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MaterialSession = {
+  id: string;
+  materialSetId: string;
+  status: MaterialSessionStatus;
+  startedAt: string;
+  expiresAt: string | null;
+  submittedAt: string | null;
+  gradedAt: string | null;
+  scoreRaw: number | null;
+  scoreMax: number | null;
+  scorePercent: number | null;
+  passed: boolean | null;
+  passThresholdPercent: number;
+  createdAt: string;
+  updatedAt: string;
+  responses: MaterialResponse[];
+};
+
+export type MaterialSet = {
+  id: string;
+  tocNodeId: string;
+  type: MaterialType;
+  isLocked: boolean;
+  questionCount: number;
+  durationSeconds: number | null;
+  createdAt: string;
+  updatedAt: string;
+  tocNode: {
+    id: string;
+    title: string;
+    depth: number;
+    order: number;
+  };
+  questions: MaterialQuestion[];
+  latestSession: MaterialSession | null;
+};
+
+export type MaterialPendingState = {
+  nodeId: string;
+  bookId: string;
+  type: MaterialType;
+  sectionStatus: "PENDING" | "RUNNING" | "FAILED";
+  attemptCount: number;
+  nextRetryAt: string | null;
+  message: string;
+  materialsGeneration: BookMaterialsGenerationStatus;
+};
+
+export type LatestMaterialResult =
+  | {
+      state: "ready";
+      material: MaterialSet;
+    }
+  | {
+      state: "pending";
+      pending: MaterialPendingState;
+    };
+
+export type MaterialResponseInput = {
+  questionId: string;
+  selectedOptionIndex?: number;
+  answerText?: string;
+};

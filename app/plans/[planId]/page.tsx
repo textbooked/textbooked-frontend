@@ -15,7 +15,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { getPlan, updatePlanItemStatus } from "@/lib/api/endpoints";
-import type { PlanDetail, PlanItem, PlanItemStatus } from "@/lib/api/models";
+import type {
+  PlanDetail,
+  PlanItem,
+  PlanItemStatus,
+  PlanItemType,
+} from "@/lib/api/models";
 import { isApiError } from "@/lib/api/request";
 import { formatDate, groupPlanItemsByWeek } from "@/lib/utils/date";
 import { parseRequiredUuid } from "@/lib/utils/uuid";
@@ -135,9 +140,9 @@ export default function PlanPage() {
 
   const groupedItems = groupPlanItemsByWeek(plan.planItems);
   const doneCount = plan.planItems.filter((item) => item.status === "DONE").length;
-  const currentNodeId = pickCurrentNodeIdFromPlan(plan);
-  const playerHref = currentNodeId
-    ? buildTocHref(currentNodeId, plan.bookId, plan.id)
+  const currentItem = pickCurrentItemFromPlan(plan);
+  const playerHref = currentItem
+    ? buildTocHref(currentItem.tocNodeId, plan.bookId, plan.id, currentItem.type)
     : `/books/${plan.bookId}`;
 
   return (
@@ -214,7 +219,12 @@ export default function PlanPage() {
                             </div>
 
                             <Link
-                              href={buildTocHref(item.tocNodeId, plan.bookId, plan.id)}
+                              href={buildTocHref(
+                                item.tocNodeId,
+                                plan.bookId,
+                                plan.id,
+                                item.type,
+                              )}
                               className="text-sm font-medium hover:underline"
                             >
                               {item.tocNode.title}
@@ -250,20 +260,29 @@ export default function PlanPage() {
   );
 }
 
-function pickCurrentNodeIdFromPlan(plan: PlanDetail): string | null {
+function pickCurrentItemFromPlan(plan: PlanDetail): PlanItem | null {
   const nextTodo = plan.planItems.find((item) => item.status === "TODO");
-  if (nextTodo?.tocNodeId) {
-    return nextTodo.tocNodeId;
+  if (nextTodo) {
+    return nextTodo;
   }
 
-  return plan.planItems[0]?.tocNodeId ?? null;
+  return plan.planItems[0] ?? null;
 }
 
-function buildTocHref(nodeId: string, bookId: string, planId: string): string {
+function buildTocHref(
+  nodeId: string,
+  bookId: string,
+  planId: string,
+  type?: PlanItemType,
+): string {
   const query = new URLSearchParams({
     bookId,
     planId,
   });
+
+  if (type) {
+    query.set("activity", type);
+  }
 
   return `/toc/${nodeId}?${query.toString()}`;
 }

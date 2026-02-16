@@ -20,11 +20,18 @@ import type {
   BookIntakeFinalizeInput,
   BookIntakeFinalizeResult,
   BookDetail,
+  BookMaterialsGenerationStatus,
   BookProgressPayload,
   BookProgressSummary,
   BookSummary,
   LibraryBookRow,
   LatestAssignmentResult,
+  LatestMaterialResult,
+  MaterialResponseInput,
+  MaterialPendingState,
+  MaterialSession,
+  MaterialSet,
+  MaterialType,
   PaceGenerationResponse,
   PlanDetail,
   PlanItem,
@@ -106,6 +113,19 @@ export async function getBookAssignmentGenerationStatus(
 ): Promise<BookAssignmentGenerationStatus> {
   const response = await apiFetch<ApiEnvelope<BookAssignmentGenerationStatus>>(
     `/books/${bookId}/assignments/status`,
+    {
+      method: "GET",
+    },
+  );
+
+  return response.data;
+}
+
+export async function getBookMaterialsGenerationStatus(
+  bookId: string,
+): Promise<BookMaterialsGenerationStatus> {
+  const response = await apiFetch<ApiEnvelope<BookMaterialsGenerationStatus>>(
+    `/books/${bookId}/materials/status`,
     {
       method: "GET",
     },
@@ -492,6 +512,87 @@ export async function getLatestAssignment(
     state: "ready",
     assignment: getData<Assignment>(response),
   };
+}
+
+export async function getLatestMaterial(
+  nodeId: string,
+  type: MaterialType,
+): Promise<LatestMaterialResult> {
+  const response = await apiFetch<ApiEnvelope<MaterialSet | MaterialPendingState>>(
+    `/toc/${nodeId}/materials/${type}/latest`,
+    {
+      method: "GET",
+    },
+  );
+
+  if (response.status === 202) {
+    return {
+      state: "pending",
+      pending: response.data as MaterialPendingState,
+    };
+  }
+
+  return {
+    state: "ready",
+    material: response.data as MaterialSet,
+  };
+}
+
+export async function startMaterialSession(
+  materialId: string,
+): Promise<MaterialSession> {
+  const response = await apiFetch<ApiEnvelope<MaterialSession>>(
+    `/materials/${materialId}/sessions`,
+    {
+      method: "POST",
+    },
+  );
+
+  return response.data;
+}
+
+export async function saveMaterialResponses(
+  sessionId: string,
+  responses: MaterialResponseInput[],
+): Promise<MaterialSession> {
+  const response = await apiFetch<ApiEnvelope<MaterialSession>>(
+    `/material-sessions/${sessionId}/responses`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ responses }),
+    },
+  );
+
+  return response.data;
+}
+
+export async function submitMaterialSession(
+  sessionId: string,
+): Promise<MaterialSession> {
+  const response = await apiFetch<ApiEnvelope<MaterialSession>>(
+    `/material-sessions/${sessionId}/submit`,
+    {
+      method: "POST",
+    },
+  );
+
+  return response.data;
+}
+
+export async function getMaterialSession(
+  sessionId: string,
+): Promise<MaterialSession> {
+  const response = await apiFetch<ApiEnvelope<MaterialSession>>(
+    `/material-sessions/${sessionId}`,
+    {
+      method: "GET",
+    },
+  );
+
+  return response.data;
 }
 
 export async function createAttempt(

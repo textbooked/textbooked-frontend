@@ -20,17 +20,18 @@ import {
   createPlan,
   generatePaces,
   getBook,
-  getBookAssignmentGenerationStatus,
+  getBookMaterialsGenerationStatus,
   getBookToc,
   getLatestPlanForBook,
   listPaceOptions,
 } from "@/lib/api/endpoints";
 import type {
-  BookAssignmentGenerationStatus,
   BookDetail,
+  BookMaterialsGenerationStatus,
   PaceGenerationResponse,
   PaceOption,
   PlanDetail,
+  PlanItemType,
   TocTreeResponse,
 } from "@/lib/api/models";
 import { isApiError } from "@/lib/api/request";
@@ -53,22 +54,22 @@ export default function BookOverviewPage() {
   const [selectedPaceId, setSelectedPaceId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(todayIsoDate());
   const [latestPlan, setLatestPlan] = useState<PlanDetail | null>(null);
-  const [assignmentGenerationStatus, setAssignmentGenerationStatus] =
-    useState<BookAssignmentGenerationStatus | null>(null);
+  const [materialsGenerationStatus, setMaterialsGenerationStatus] =
+    useState<BookMaterialsGenerationStatus | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPreparingPaces, setIsPreparingPaces] = useState(false);
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
 
-  const refreshAssignmentStatus = useCallback(
+  const refreshMaterialsStatus = useCallback(
     async (bookIdValue: string, silent = false) => {
       try {
-        const status = await getBookAssignmentGenerationStatus(bookIdValue);
-        setAssignmentGenerationStatus(status);
+        const status = await getBookMaterialsGenerationStatus(bookIdValue);
+        setMaterialsGenerationStatus(status);
       } catch (err: unknown) {
         if (isApiError(err) && err.status === 404) {
-          setAssignmentGenerationStatus(null);
+          setMaterialsGenerationStatus(null);
           return;
         }
 
@@ -76,7 +77,7 @@ export default function BookOverviewPage() {
           const message =
             err instanceof Error
               ? err.message
-              : "Failed to load assignment generation status.";
+              : "Failed to load materials generation status.";
           toast.error(message);
         }
       }
@@ -119,7 +120,7 @@ export default function BookOverviewPage() {
       setSelectedPaceId(
         latestPlanData?.paceOptionId ?? pacesPayload.options[0]?.id ?? null,
       );
-      await refreshAssignmentStatus(bookId, true);
+      await refreshMaterialsStatus(bookId, true);
 
       if (latestPlanData?.startDate) {
         setStartDate(latestPlanData.startDate.slice(0, 10));
@@ -131,7 +132,7 @@ export default function BookOverviewPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [bookId, refreshAssignmentStatus]);
+  }, [bookId, refreshMaterialsStatus]);
 
   useEffect(() => {
     void loadBookState();
@@ -140,21 +141,21 @@ export default function BookOverviewPage() {
   useEffect(() => {
     if (
       !bookId ||
-      !assignmentGenerationStatus ||
-      (assignmentGenerationStatus.status !== "PENDING" &&
-        assignmentGenerationStatus.status !== "RUNNING")
+      !materialsGenerationStatus ||
+      (materialsGenerationStatus.status !== "PENDING" &&
+        materialsGenerationStatus.status !== "RUNNING")
     ) {
       return;
     }
 
     const timer = window.setInterval(() => {
-      void refreshAssignmentStatus(bookId, true);
+      void refreshMaterialsStatus(bookId, true);
     }, 9000);
 
     return () => {
       window.clearInterval(timer);
     };
-  }, [assignmentGenerationStatus, bookId, refreshAssignmentStatus]);
+  }, [materialsGenerationStatus, bookId, refreshMaterialsStatus]);
 
   async function onPreparePaces() {
     if (!bookId) {
@@ -250,12 +251,12 @@ export default function BookOverviewPage() {
     return <ErrorAlert message="Book was not found." />;
   }
 
-  const currentPlanNodeId = latestPlan
-    ? pickCurrentNodeIdFromPlan(latestPlan)
+  const currentPlanItem = latestPlan
+    ? pickCurrentItemFromPlan(latestPlan)
     : null;
   const playerHref =
-    bookId && currentPlanNodeId
-      ? buildTocHref(currentPlanNodeId, bookId, latestPlan?.id)
+    bookId && currentPlanItem
+      ? buildTocHref(currentPlanItem.tocNodeId, bookId, latestPlan?.id, currentPlanItem.type)
       : `/books/${book.id}`;
   const tocHref = `/books/${book.id}?tab=toc`;
   const paceHref = `/books/${book.id}?tab=pace`;
@@ -317,20 +318,25 @@ export default function BookOverviewPage() {
         <TabsContent value="pace" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Assignment Generation</CardTitle>
+              <CardTitle className="text-base">Material Generation</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {!assignmentGenerationStatus ? (
+              {!materialsGenerationStatus ? (
                 <p className="text-sm text-muted-foreground">
-                  Assignment generation status is unavailable for this book.
+                  Material generation status is unavailable for this book.
                 </p>
               ) : (
                 <>
                   <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <Badge variant="secondary">{assignmentGenerationStatus.status}</Badge>
+                    <Badge variant="secondary">{materialsGenerationStatus.status}</Badge>
                     <span className="text-muted-foreground">
-                      {assignmentGenerationStatus.generatedSections} /{" "}
-                      {assignmentGenerationStatus.totalSections} sections generated
+                      Assignment{" "}
+                      {materialsGenerationStatus.byType.ASSIGNMENT.generatedSections} /{" "}
+                      {materialsGenerationStatus.byType.ASSIGNMENT.totalSections} •
+                      Review {materialsGenerationStatus.byType.REVIEW.generatedSections} /{" "}
+                      {materialsGenerationStatus.byType.REVIEW.totalSections} •
+                      Test {materialsGenerationStatus.byType.TEST.generatedSections} /{" "}
+                      {materialsGenerationStatus.byType.TEST.totalSections}
                     </span>
                   </div>
 
@@ -340,10 +346,12 @@ export default function BookOverviewPage() {
                       style={{
                         width: `${Math.min(
                           100,
-                          assignmentGenerationStatus.totalSections > 0
+                          materialsGenerationStatus.byType.ASSIGNMENT.totalSections > 0
                             ? Math.round(
-                                (assignmentGenerationStatus.generatedSections /
-                                  assignmentGenerationStatus.totalSections) *
+                                (materialsGenerationStatus.byType.ASSIGNMENT
+                                  .generatedSections /
+                                  materialsGenerationStatus.byType.ASSIGNMENT
+                                    .totalSections) *
                                   100,
                               )
                             : 100,
@@ -352,15 +360,19 @@ export default function BookOverviewPage() {
                     />
                   </div>
 
-                  {assignmentGenerationStatus.failedSections > 0 ? (
+                  {materialsGenerationStatus.byType.ASSIGNMENT.failedSections > 0 ||
+                  materialsGenerationStatus.byType.REVIEW.failedSections > 0 ||
+                  materialsGenerationStatus.byType.TEST.failedSections > 0 ? (
                     <p className="text-xs text-amber-700 dark:text-amber-400">
-                      {assignmentGenerationStatus.failedSections} section(s) are currently
-                      failed and queued for retry.
+                      Failed sections: A
+                      {materialsGenerationStatus.byType.ASSIGNMENT.failedSections} / R
+                      {materialsGenerationStatus.byType.REVIEW.failedSections} / T
+                      {materialsGenerationStatus.byType.TEST.failedSections}
                     </p>
                   ) : null}
 
                   <p className="text-xs text-muted-foreground">
-                    Updated {formatDateTime(assignmentGenerationStatus.updatedAt)}
+                    Updated {formatDateTime(materialsGenerationStatus.updatedAt)}
                   </p>
                 </>
               )}
@@ -462,22 +474,31 @@ export default function BookOverviewPage() {
   );
 }
 
-function pickCurrentNodeIdFromPlan(plan: PlanDetail): string | null {
+function pickCurrentItemFromPlan(plan: PlanDetail): PlanDetail["planItems"][number] | null {
   const nextTodo = plan.planItems.find((item) => item.status === "TODO");
-  if (nextTodo?.tocNodeId) {
-    return nextTodo.tocNodeId;
+  if (nextTodo) {
+    return nextTodo;
   }
 
-  return plan.planItems[0]?.tocNodeId ?? null;
+  return plan.planItems[0] ?? null;
 }
 
-function buildTocHref(nodeId: string, bookId: string, planId?: string): string {
+function buildTocHref(
+  nodeId: string,
+  bookId: string,
+  planId?: string,
+  activity?: PlanItemType,
+): string {
   const query = new URLSearchParams({
     bookId,
   });
 
   if (planId) {
     query.set("planId", planId);
+  }
+
+  if (activity) {
+    query.set("activity", activity);
   }
 
   return `/toc/${nodeId}?${query.toString()}`;
