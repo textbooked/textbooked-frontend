@@ -11,6 +11,7 @@ import type { TocTreeNode } from "@/lib/api/models";
 type TocTreeProps = {
   nodes: TocTreeNode[];
   linkToNodes?: boolean;
+  interactionMode?: "static" | "link" | "expand-only";
   bookId?: string;
   planId?: string;
   className?: string;
@@ -19,10 +20,13 @@ type TocTreeProps = {
 export function TocTree({
   nodes,
   linkToNodes = false,
+  interactionMode,
   bookId,
   planId,
   className,
 }: TocTreeProps) {
+  const resolvedInteractionMode =
+    interactionMode ?? (linkToNodes ? "link" : "static");
   const initiallyExpanded = useMemo(
     () => new Set(nodes.map((node) => node.id)),
     [nodes],
@@ -58,7 +62,7 @@ export function TocTree({
           node={node}
           expandedIds={expandedIds}
           onToggle={toggle}
-          linkToNodes={linkToNodes}
+          interactionMode={resolvedInteractionMode}
           bookId={bookId}
           planId={planId}
         />
@@ -71,7 +75,7 @@ type TocNodeRowProps = {
   node: TocTreeNode;
   expandedIds: Set<string>;
   onToggle: (nodeId: string) => void;
-  linkToNodes: boolean;
+  interactionMode: "static" | "link" | "expand-only";
   bookId?: string;
   planId?: string;
 };
@@ -80,7 +84,7 @@ function TocNodeRow({
   node,
   expandedIds,
   onToggle,
-  linkToNodes,
+  interactionMode,
   bookId,
   planId,
 }: TocNodeRowProps) {
@@ -111,10 +115,18 @@ function TocNodeRow({
 
         <FileText className="size-4 text-muted-foreground" />
 
-        {linkToNodes ? (
+        {interactionMode === "link" ? (
           <Link href={nodeHref} className="text-sm hover:underline">
             {node.title}
           </Link>
+        ) : interactionMode === "expand-only" && hasChildren ? (
+          <button
+            type="button"
+            onClick={() => onToggle(node.id)}
+            className="cursor-pointer text-left text-sm hover:underline"
+          >
+            {node.title}
+          </button>
         ) : (
           <p className="text-sm">{node.title}</p>
         )}
@@ -128,7 +140,7 @@ function TocNodeRow({
               node={child}
               expandedIds={expandedIds}
               onToggle={onToggle}
-              linkToNodes={linkToNodes}
+              interactionMode={interactionMode}
               bookId={bookId}
               planId={planId}
             />
