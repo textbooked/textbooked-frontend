@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
+import { BookWorkspaceNav } from "@/components/navigation/book-workspace-nav";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorAlert } from "@/components/error-alert";
 import { LoadingState } from "@/components/loading-state";
@@ -27,10 +28,12 @@ import type {
   TocNodeDetail,
 } from "@/lib/api/models";
 import { formatDateTime } from "@/lib/utils/date";
+import { writeLastOpenedNode } from "@/lib/utils/resume";
 import { parseOptionalUuid, parseRequiredUuid } from "@/lib/utils/uuid";
 
 type AttemptsByQuestion = Record<string, Attempt[]>;
 const ANSWER_DRAFTS_STORAGE_PREFIX = "textbooked.answerDrafts";
+const SCORE_MAX = 5;
 
 export default function TocNodePage() {
   const params = useParams<{ nodeId: string }>();
@@ -38,6 +41,9 @@ export default function TocNodePage() {
   const nodeId = useMemo(() => parseRequiredUuid(params.nodeId), [params.nodeId]);
   const bookIdFromQuery = useMemo(() => {
     return parseOptionalUuid(searchParams.get("bookId"));
+  }, [searchParams]);
+  const planIdFromQuery = useMemo(() => {
+    return parseOptionalUuid(searchParams.get("planId"));
   }, [searchParams]);
 
   const [nodeDetail, setNodeDetail] = useState<TocNodeDetail | null>(null);
@@ -101,6 +107,14 @@ export default function TocNodePage() {
   useEffect(() => {
     void loadPage();
   }, [loadPage]);
+
+  useEffect(() => {
+    if (!nodeDetail) {
+      return;
+    }
+
+    writeLastOpenedNode(nodeDetail.book.id, nodeDetail.node.id, planIdFromQuery);
+  }, [nodeDetail, planIdFromQuery]);
 
   useEffect(() => {
     if (!answerDraftStorageKey) {
@@ -247,7 +261,7 @@ export default function TocNodePage() {
     { id: nodeDetail.node.id, title: nodeDetail.node.title },
   ];
   const breadcrumbHref = (targetNodeId: string) =>
-    `/toc/${targetNodeId}?bookId=${nodeDetail.book.id}`;
+    buildTocHref(targetNodeId, nodeDetail.book.id, planIdFromQuery);
   const assignment = assignmentResult?.state === "ready" ? assignmentResult.assignment : null;
   const pendingAssignment =
     assignmentResult?.state === "pending" ? assignmentResult.pending : null;
@@ -255,13 +269,21 @@ export default function TocNodePage() {
     pendingAssignment &&
     (pendingAssignment.assignmentGeneration.status === "READY" ||
       pendingAssignment.assignmentGeneration.status === "PARTIAL_FAILED");
+  const playerHref = buildTocHref(
+    nodeDetail.node.id,
+    nodeDetail.book.id,
+    planIdFromQuery,
+  );
+  const tocHref = `/books/${nodeDetail.book.id}?tab=toc`;
+  const paceHref = `/books/${nodeDetail.book.id}?tab=pace`;
+  const planHref = planIdFromQuery ? `/plans/${planIdFromQuery}` : undefined;
 
   return (
     <section className="space-y-6">
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Button asChild variant="ghost" size="sm">
-            <Link href={`/books/${nodeDetail.book.id}`}>
+            <Link href={`/books/${nodeDetail.book.id}?tab=toc`}>
               <ArrowLeft className="size-4" />
               Back to Book
             </Link>
@@ -269,7 +291,7 @@ export default function TocNodePage() {
         </div>
 
         <nav className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-          <Link href={`/books/${nodeDetail.book.id}`} className="hover:underline">
+          <Link href={`/books/${nodeDetail.book.id}?tab=toc`} className="hover:underline">
             {nodeDetail.book.title}
           </Link>
           {breadcrumbNodes.map((crumb, index) => (
@@ -288,6 +310,14 @@ export default function TocNodePage() {
 
         <h1 className="text-2xl font-semibold tracking-tight">{nodeDetail.node.title}</h1>
       </div>
+
+      <BookWorkspaceNav
+        playerHref={playerHref}
+        tocHref={tocHref}
+        paceHref={paceHref}
+        planHref={planHref}
+        active="player"
+      />
 
       <Card>
         <CardHeader>
@@ -362,13 +392,15 @@ export default function TocNodePage() {
               </div>
 
               <div className="space-y-4">
-                {assignment.questions.map((question) => {
+                {assignment.questions.map((question, questionIndex) => {
                   const attempts = attemptsByQuestion[question.id] ?? [];
 
                   return (
                     <Card key={question.id}>
                       <CardHeader>
-                        <CardTitle className="text-base">Question {question.id}</CardTitle>
+                        <CardTitle className="text-base">
+                          Question {questionIndex + 1}
+                        </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <p className="text-sm">{question.prompt}</p>
@@ -408,21 +440,26 @@ export default function TocNodePage() {
                             </p>
                           ) : (
                             <div className="space-y-2">
-                              {attempts.map((attempt) => {
+                              {attempts.map((attempt, attemptIndex) => {
                                 const feedback = readFeedback(attempt);
                                 return (
                                   <div key={attempt.id} className="rounded-md border p-3 text-sm">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                       <div className="flex items-center gap-2">
-                                        <Badge variant="outline">Attempt #{attempt.id}</Badge>
+                                        <Badge variant="outline">
+                                          Attempt {attemptIndex + 1}
+                                        </Badge>
                                         <span className="text-xs text-muted-foreground">
                                           {formatDateTime(attempt.createdAt)}
                                         </span>
                                       </div>
 
                                       <div className="flex items-center gap-2">
-                                        <Badge variant="secondary">
-                                          Score: {attempt.score ?? "Not graded"}
+                                        <Badge
+                                          variant="secondary"
+                                          className={getScoreToneClassName(attempt.score)}
+                                        >
+                                          Score: {formatAttemptScore(attempt.score)}
                                         </Badge>
 
                                         {attempt.score === null ? (
@@ -595,6 +632,43 @@ function writeAnswerDrafts(
   }
 
   window.localStorage.setItem(storageKey, JSON.stringify(nonEmptyDrafts));
+}
+
+function buildTocHref(nodeId: string, bookId: string, planId?: string | null): string {
+  const query = new URLSearchParams({
+    bookId,
+  });
+
+  if (planId) {
+    query.set("planId", planId);
+  }
+
+  return `/toc/${nodeId}?${query.toString()}`;
+}
+
+function formatAttemptScore(score: number | null): string {
+  if (score === null) {
+    return "Not graded";
+  }
+
+  const normalized = Math.min(SCORE_MAX, Math.max(0, Math.round(score)));
+  return `${normalized}/${SCORE_MAX}`;
+}
+
+function getScoreToneClassName(score: number | null): string | undefined {
+  if (score === null) {
+    return undefined;
+  }
+
+  if (score <= 1) {
+    return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300";
+  }
+
+  if (score <= 3) {
+    return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300";
+  }
+
+  return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300";
 }
 
 function sortAttempts(attempts: Attempt[]): Attempt[] {

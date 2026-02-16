@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight, ImageOff, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,11 +14,14 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { listLibraryBooksWithProgress } from "@/lib/api/endpoints";
 import type { BookProgressSummary, LibraryBookRow } from "@/lib/api/models";
 import { formatDateTime } from "@/lib/utils/date";
+import { readLastOpenedNode, readLastOpenedPlanId } from "@/lib/utils/resume";
+import { isUuid } from "@/lib/utils/uuid";
 
 export default function LibraryPage() {
   const [books, setBooks] = useState<LibraryBookRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasHydrated, setHasHydrated] = useState(false);
   const hasShownMissingProgressToast = useRef(false);
 
   async function loadBooks() {
@@ -50,6 +53,18 @@ export default function LibraryPage() {
   useEffect(() => {
     void loadBooks();
   }, []);
+
+  useEffect(() => {
+    setHasHydrated(true);
+  }, []);
+
+  const openHrefByBookId = useMemo(
+    () =>
+      new Map(
+        books.map((book) => [book.id, resolveBookOpenHref(book, hasHydrated)]),
+      ),
+    [books, hasHydrated],
+  );
 
   return (
     <section className="space-y-6">
@@ -99,7 +114,7 @@ export default function LibraryPage() {
           {books.map((book) => (
             <Link
               key={book.id}
-              href={`/books/${book.id}`}
+              href={openHrefByBookId.get(book.id) ?? `/books/${book.id}`}
               className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <Card className="cursor-pointer transition-all duration-150 hover:bg-muted/20 hover:shadow-md">
@@ -135,6 +150,33 @@ export default function LibraryPage() {
       ) : null}
     </section>
   );
+}
+
+function resolveBookOpenHref(
+  book: LibraryBookRow,
+  preferLocalResume: boolean,
+): string {
+  const lastOpenedNodeId = preferLocalResume ? readLastOpenedNode(book.id) : null;
+  const resumeNodeId = isUuid(lastOpenedNodeId)
+    ? lastOpenedNodeId
+    : book.progress.currentNodeId;
+  const resumePlanId = preferLocalResume
+    ? readLastOpenedPlanId(book.id) ?? book.progress.currentPlanId
+    : book.progress.currentPlanId;
+
+  if (!resumeNodeId) {
+    return `/books/${book.id}`;
+  }
+
+  const query = new URLSearchParams({
+    bookId: book.id,
+  });
+
+  if (isUuid(resumePlanId)) {
+    query.set("planId", resumePlanId);
+  }
+
+  return `/toc/${resumeNodeId}?${query.toString()}`;
 }
 
 type BookCoverProps = {

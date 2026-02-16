@@ -8,6 +8,8 @@ export type BookProgressPayload = {
   totalItems?: number | null;
   percentComplete?: number | null;
   currentChapterOrSection?: string | null;
+  currentNodeId?: string | null;
+  currentPlanId?: string | null;
   currentNodeTitle?: string | null;
   currentSectionTitle?: string | null;
   currentChapterTitle?: string | null;
@@ -18,6 +20,8 @@ export type BookProgressSummary = {
   totalItems: number;
   percentComplete: number;
   currentChapterOrSection: string;
+  currentNodeId: string | null;
+  currentPlanId: string | null;
 };
 
 export type BookSummary = {

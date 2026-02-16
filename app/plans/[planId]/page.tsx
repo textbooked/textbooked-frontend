@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
+import { BookWorkspaceNav } from "@/components/navigation/book-workspace-nav";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorAlert } from "@/components/error-alert";
 import { LoadingState } from "@/components/loading-state";
@@ -134,12 +135,16 @@ export default function PlanPage() {
 
   const groupedItems = groupPlanItemsByWeek(plan.planItems);
   const doneCount = plan.planItems.filter((item) => item.status === "DONE").length;
+  const currentNodeId = pickCurrentNodeIdFromPlan(plan);
+  const playerHref = currentNodeId
+    ? buildTocHref(currentNodeId, plan.bookId, plan.id)
+    : `/books/${plan.bookId}`;
 
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Plan #{plan.id}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Study Plan</h1>
           <p className="text-sm text-muted-foreground">
             {plan.book.title} • starts {formatDate(plan.startDate)}
           </p>
@@ -152,6 +157,14 @@ export default function PlanPage() {
           </Link>
         </Button>
       </div>
+
+      <BookWorkspaceNav
+        playerHref={playerHref}
+        tocHref={`/books/${plan.bookId}?tab=toc`}
+        paceHref={`/books/${plan.bookId}?tab=pace`}
+        planHref={`/plans/${plan.id}`}
+        active="plan"
+      />
 
       <Card>
         <CardHeader>
@@ -201,7 +214,7 @@ export default function PlanPage() {
                             </div>
 
                             <Link
-                              href={`/toc/${item.tocNodeId}?bookId=${plan.bookId}`}
+                              href={buildTocHref(item.tocNodeId, plan.bookId, plan.id)}
                               className="text-sm font-medium hover:underline"
                             >
                               {item.tocNode.title}
@@ -235,4 +248,22 @@ export default function PlanPage() {
       )}
     </section>
   );
+}
+
+function pickCurrentNodeIdFromPlan(plan: PlanDetail): string | null {
+  const nextTodo = plan.planItems.find((item) => item.status === "TODO");
+  if (nextTodo?.tocNodeId) {
+    return nextTodo.tocNodeId;
+  }
+
+  return plan.planItems[0]?.tocNodeId ?? null;
+}
+
+function buildTocHref(nodeId: string, bookId: string, planId: string): string {
+  const query = new URLSearchParams({
+    bookId,
+    planId,
+  });
+
+  return `/toc/${nodeId}?${query.toString()}`;
 }

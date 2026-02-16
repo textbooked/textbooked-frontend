@@ -1,3 +1,6 @@
+const UUID_IN_TEXT_PATTERN =
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi;
+
 export class ApiError extends Error {
   status: number;
   details: unknown;
@@ -12,7 +15,7 @@ export class ApiError extends Error {
 
 export function extractErrorMessage(error: unknown, status: number): string {
   if (typeof error === "string") {
-    return error;
+    return sanitizeUserFacingMessage(error);
   }
 
   if (error && typeof error === "object") {
@@ -20,16 +23,16 @@ export function extractErrorMessage(error: unknown, status: number): string {
 
     const message = errorRecord.message;
     if (typeof message === "string") {
-      return message;
+      return sanitizeUserFacingMessage(message);
     }
 
     if (Array.isArray(message)) {
-      return message.map((value) => String(value)).join(", ");
+      return sanitizeUserFacingMessage(message.map((value) => String(value)).join(", "));
     }
 
     const fallback = errorRecord.error;
     if (typeof fallback === "string") {
-      return fallback;
+      return sanitizeUserFacingMessage(fallback);
     }
   }
 
@@ -55,4 +58,8 @@ export function isApiError(error: unknown): error is ApiError {
 
   const maybeError = error as { status?: unknown };
   return typeof maybeError.status === "number";
+}
+
+function sanitizeUserFacingMessage(input: string): string {
+  return input.replace(UUID_IN_TEXT_PATTERN, "[id]");
 }

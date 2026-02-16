@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
+import { BookWorkspaceNav } from "@/components/navigation/book-workspace-nav";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorAlert } from "@/components/error-alert";
 import { LoadingState } from "@/components/loading-state";
@@ -38,7 +39,13 @@ import { parseRequiredUuid } from "@/lib/utils/uuid";
 
 export default function BookOverviewPage() {
   const params = useParams<{ id: string }>();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const bookId = useMemo(() => parseRequiredUuid(params.id), [params.id]);
+  const activeTab = useMemo<"toc" | "pace">(() => {
+    return searchParams.get("tab") === "pace" ? "pace" : "toc";
+  }, [searchParams]);
 
   const [book, setBook] = useState<BookDetail | null>(null);
   const [toc, setToc] = useState<TocTreeResponse | null>(null);
@@ -204,6 +211,24 @@ export default function BookOverviewPage() {
     }
   }
 
+  function onTabChange(nextTab: string) {
+    if (nextTab !== "toc" && nextTab !== "pace") {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    if (nextTab === "toc") {
+      nextParams.delete("tab");
+    } else {
+      nextParams.set("tab", "pace");
+    }
+
+    const nextHref = nextParams.toString()
+      ? `${pathname}?${nextParams.toString()}`
+      : pathname;
+    router.replace(nextHref, { scroll: false });
+  }
+
   if (isLoading) {
     return <LoadingState label="Loading book..." />;
   }
@@ -225,14 +250,22 @@ export default function BookOverviewPage() {
     return <ErrorAlert message="Book was not found." />;
   }
 
+  const currentPlanNodeId = latestPlan
+    ? pickCurrentNodeIdFromPlan(latestPlan)
+    : null;
+  const playerHref =
+    bookId && currentPlanNodeId
+      ? buildTocHref(currentPlanNodeId, bookId, latestPlan?.id)
+      : `/books/${book.id}`;
+  const tocHref = `/books/${book.id}?tab=toc`;
+  const paceHref = `/books/${book.id}?tab=pace`;
+  const planHref = latestPlan ? `/plans/${latestPlan.id}` : undefined;
+
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">{book.title}</h1>
-            <Badge variant="secondary">#{book.id}</Badge>
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight">{book.title}</h1>
           <p className="text-sm text-muted-foreground">{book.author}</p>
         </div>
 
@@ -244,7 +277,15 @@ export default function BookOverviewPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="toc" className="space-y-4">
+      <BookWorkspaceNav
+        playerHref={playerHref}
+        tocHref={tocHref}
+        paceHref={paceHref}
+        planHref={planHref}
+        active={activeTab === "pace" ? "pace" : "toc"}
+      />
+
+      <Tabs value={activeTab} onValueChange={onTabChange} className="space-y-4">
         <TabsList>
           <TabsTrigger value="toc">Table of Contents</TabsTrigger>
           <TabsTrigger value="pace">Pace and Plan</TabsTrigger>
@@ -257,7 +298,12 @@ export default function BookOverviewPage() {
             </CardHeader>
             <CardContent>
               {toc && toc.nodes.length > 0 ? (
-                <TocTree nodes={toc.nodes} linkToNodes bookId={bookId ?? undefined} />
+                <TocTree
+                  nodes={toc.nodes}
+                  linkToNodes
+                  bookId={bookId ?? undefined}
+                  planId={latestPlan?.id}
+                />
               ) : (
                 <EmptyState
                   title="No ToC found"
@@ -404,7 +450,7 @@ export default function BookOverviewPage() {
 
                 {latestPlan ? (
                   <Button asChild variant="secondary">
-                    <Link href={`/plans/${latestPlan.id}`}>Open Plan #{latestPlan.id}</Link>
+                    <Link href={`/plans/${latestPlan.id}`}>Open Plan</Link>
                   </Button>
                 ) : null}
               </div>
@@ -414,4 +460,25 @@ export default function BookOverviewPage() {
       </Tabs>
     </section>
   );
+}
+
+function pickCurrentNodeIdFromPlan(plan: PlanDetail): string | null {
+  const nextTodo = plan.planItems.find((item) => item.status === "TODO");
+  if (nextTodo?.tocNodeId) {
+    return nextTodo.tocNodeId;
+  }
+
+  return plan.planItems[0]?.tocNodeId ?? null;
+}
+
+function buildTocHref(nodeId: string, bookId: string, planId?: string): string {
+  const query = new URLSearchParams({
+    bookId,
+  });
+
+  if (planId) {
+    query.set("planId", planId);
+  }
+
+  return `/toc/${nodeId}?${query.toString()}`;
 }

@@ -690,12 +690,25 @@ function normalizeBookProgress(progress: BookProgressPayload): BookProgressSumma
       progressRecord.currentTitle,
       progressRecord.currentNode,
     ]) ?? "Not started yet";
+  const currentNodeId = firstUuid([
+    progress.currentNodeId,
+    progressRecord.currentTocNodeId,
+    progressRecord.currentSectionId,
+    progressRecord.currentNodeId,
+  ]);
+  const currentPlanId = firstUuid([
+    progress.currentPlanId,
+    progressRecord.currentStudyPlanId,
+    progressRecord.currentPlanId,
+  ]);
 
   return {
     doneItems,
     totalItems,
     percentComplete,
     currentChapterOrSection,
+    currentNodeId,
+    currentPlanId,
   };
 }
 
@@ -705,6 +718,8 @@ function defaultBookProgress(): BookProgressSummary {
     totalItems: 0,
     percentComplete: 0,
     currentChapterOrSection: "Not started yet",
+    currentNodeId: null,
+    currentPlanId: null,
   };
 }
 
@@ -728,6 +743,16 @@ function firstNonEmptyString(values: unknown[]): string | null {
   for (const value of values) {
     if (typeof value === "string" && value.trim().length > 0) {
       return value.trim();
+    }
+  }
+
+  return null;
+}
+
+function firstUuid(values: unknown[]): string | null {
+  for (const value of values) {
+    if (isUuid(value)) {
+      return value;
     }
   }
 

@@ -12,6 +12,7 @@ type TocTreeProps = {
   nodes: TocTreeNode[];
   linkToNodes?: boolean;
   bookId?: string;
+  planId?: string;
   className?: string;
 };
 
@@ -19,6 +20,7 @@ export function TocTree({
   nodes,
   linkToNodes = false,
   bookId,
+  planId,
   className,
 }: TocTreeProps) {
   const initiallyExpanded = useMemo(
@@ -58,6 +60,7 @@ export function TocTree({
           onToggle={toggle}
           linkToNodes={linkToNodes}
           bookId={bookId}
+          planId={planId}
         />
       ))}
     </div>
@@ -70,6 +73,7 @@ type TocNodeRowProps = {
   onToggle: (nodeId: string) => void;
   linkToNodes: boolean;
   bookId?: string;
+  planId?: string;
 };
 
 function TocNodeRow({
@@ -78,10 +82,11 @@ function TocNodeRow({
   onToggle,
   linkToNodes,
   bookId,
+  planId,
 }: TocNodeRowProps) {
   const hasChildren = node.children.length > 0;
   const isExpanded = expandedIds.has(node.id);
-  const nodeHref = bookId ? `/toc/${node.id}?bookId=${bookId}` : `/toc/${node.id}`;
+  const nodeHref = buildNodeHref(node.id, bookId, planId);
 
   return (
     <div>
@@ -125,10 +130,27 @@ function TocNodeRow({
               onToggle={onToggle}
               linkToNodes={linkToNodes}
               bookId={bookId}
+              planId={planId}
             />
           ))}
         </div>
       ) : null}
     </div>
   );
+}
+
+function buildNodeHref(nodeId: string, bookId?: string, planId?: string): string {
+  if (!bookId) {
+    return `/toc/${nodeId}`;
+  }
+
+  const query = new URLSearchParams({
+    bookId,
+  });
+
+  if (planId) {
+    query.set("planId", planId);
+  }
+
+  return `/toc/${nodeId}?${query.toString()}`;
 }
