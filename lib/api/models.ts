@@ -103,6 +103,13 @@ export type BookDetail = BookSummary & {
   };
 };
 
+export type BookEnrollmentResult = {
+  bookId: string;
+  userId: string;
+  enrolledAt: string;
+  alreadyEnrolled: boolean;
+};
+
 export type BookIntakeAnalyzeResult = {
   fileName: string;
   pageCount: number;

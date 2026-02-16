@@ -16,6 +16,7 @@ import type {
   AssignmentPendingState,
   Attempt,
   BookAssignmentGenerationStatus,
+  BookEnrollmentResult,
   BookIntakeAnalyzeResult,
   BookIntakeFinalizeInput,
   BookIntakeFinalizeResult,
@@ -219,6 +220,18 @@ export async function createBook(input: {
   rememberBookId(createdBook.id);
 
   return createdBook;
+}
+
+export async function enrollBook(bookId: string): Promise<BookEnrollmentResult> {
+  const response = await apiFetch<ApiEnvelope<BookEnrollmentResult>>(
+    `/books/${bookId}/enroll`,
+    {
+      method: "POST",
+    },
+  );
+
+  rememberBookId(bookId);
+  return response.data;
 }
 
 export async function analyzeBookIntake(
