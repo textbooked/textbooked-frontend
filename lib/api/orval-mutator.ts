@@ -1,7 +1,15 @@
-export const orvalFetcher = async <T>(
+import { getBackendToken } from "@/lib/auth/backend-token";
+
+type MutatorResponse<TData> = {
+  data: TData;
+  status: number;
+  headers: Headers;
+};
+
+export async function orvalFetcher<TData>(
   url: string,
   options: RequestInit = {},
-): Promise<T> => {
+): Promise<TData> {
   const backendUrl = getBackendUrl();
 
   const requestUrl =
@@ -15,53 +23,47 @@ export const orvalFetcher = async <T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(requestUrl, {
-    ...options,
-    headers,
-  });
+  const response = await fetch(
+    requestUrl,
+    Object.assign({}, options, { headers }),
+  );
 
   const rawBody = await response.text();
-  let data: unknown = {};
+  let data: unknown;
+
   if (rawBody.length > 0) {
     try {
       data = JSON.parse(rawBody);
-    } catch {
+    } catch (parseError) {
+      void parseError;
       data = rawBody;
     }
   }
 
   if (!response.ok) {
-    const error = new Error(extractErrorMessage(data, response.status)) as Error & {
-      status?: number;
-      details?: unknown;
-    };
-
-    error.status = response.status;
-    error.details = data;
-    throw error;
+    throw Object.assign(new Error(extractErrorMessage(data, response.status)), {
+      status: response.status,
+      details: data,
+    });
   }
 
-  return {
-    data,
+  const result: MutatorResponse<unknown> = {
+    data: data as TData,
     status: response.status,
     headers: response.headers,
-  } as T;
-};
+  };
 
-async function resolveBackendToken(): Promise<string | null> {
-  return readWindowToken();
+  return result as TData;
 }
 
-function readWindowToken(): string | null {
-  if (typeof window === "undefined") {
+async function resolveBackendToken() {
+  try {
+    const token = getBackendToken();
+    return typeof token === "string" && token.length > 0 ? token : null;
+  } catch (tokenError) {
+    void tokenError;
     return null;
   }
-
-  const token = (
-    window as Window & { __TEXTBOOKED_BACKEND_TOKEN__?: string | null }
-  ).__TEXTBOOKED_BACKEND_TOKEN__;
-
-  return typeof token === "string" && token.length > 0 ? token : null;
 }
 
 function extractErrorMessage(error: unknown, status: number): string {

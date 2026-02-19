@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 
-import { syncBackendUser } from "@/lib/api/auth";
+import { authGetMe } from "@/lib/api/generated/textbooked";
 import { setBackendToken } from "@/lib/auth/backend-token";
 
 export function BackendTokenSync() {
@@ -14,12 +14,6 @@ export function BackendTokenSync() {
   useLayoutEffect(() => {
     const token = session?.backendToken ?? null;
     setBackendToken(token);
-
-    if (typeof window !== "undefined") {
-      (
-        window as Window & { __TEXTBOOKED_BACKEND_TOKEN__?: string | null }
-      ).__TEXTBOOKED_BACKEND_TOKEN__ = token;
-    }
   }, [session?.backendToken]);
 
   useEffect(() => {
@@ -44,7 +38,11 @@ export function BackendTokenSync() {
 
       for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
         try {
-          await syncBackendUser(token);
+          await authGetMe({
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
           if (!canceled) {
             syncedTokenRef.current = token;
           }
