@@ -40,6 +40,10 @@ Notes:
 
 ```bash
 yarn codegen
+yarn check:structure
+yarn g:component components/shared/MyComponent --client
+yarn g:component app/'(public)'/help/components HelpPanel --client
+yarn g:component components/complex/AccountPanel AccountPanel --client --structured
 yarn dev
 yarn build
 yarn lint
@@ -47,11 +51,39 @@ yarn lint
 
 ### `yarn codegen`
 
-- Removes old generated client files via `rimraf lib/api/generated`
-- Generates API client/types with Orval from:
+- Removes old generated client files via `rimraf lib/api/endpoints lib/api/schemas`
+- Generates both clients with Orval from:
   - `${ORVAL_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}` if `ORVAL_BACKEND_URL` is set
   - otherwise `${NEXT_PUBLIC_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}`
-- Writes output to `lib/api/generated`
+- Writes output to:
+  - `lib/api/endpoints/core-client.ts` (`react-query` hooks client)
+  - `lib/api/endpoints/core-client-axios.ts` (plain axios client)
+  - `lib/api/schemas/*` (shared models)
+
+## Component Architecture
+
+The frontend uses a route-centric App Router layout:
+
+- `app/**/page.tsx` and `app/**/layout.tsx` are Next.js route entrypoints.
+- Route-specific modules are colocated under each route segment:
+  - `app/**/components`
+  - `app/**/hooks`
+  - `app/**/lib`
+  - `app/**/types.ts`
+- Reusable shared components live in `components/`.
+- Global providers live in `providers/`.
+
+Component patterns:
+
+- Keep components minimal by default (`index.tsx` is enough for simple components).
+- Use `createComponent` selectively for complex reusable components only.
+- `style.ts` is optional and should be used only for reusable CVA variants/tokens.
+
+Structure rules enforced by `yarn check:structure`:
+
+- No `app/**/_screen` or `app/**/_layout` directories.
+- No `legacy.tsx` compatibility files.
+- No explicit `createComponent<...>` generic syntax.
 
 ## Google OAuth Setup
 
@@ -65,10 +97,10 @@ yarn lint
 
 - Google sign-in only.
 - JWT session strategy.
-- Session includes `session.backendToken` (HS256 token) used for backend Bearer auth.
+- Session includes `session.apiToken` (HS256 token) used for backend Bearer auth.
 - After sign-in, frontend calls backend `GET /auth/me` to ensure the backend user row is synced/created.
 - API adapter automatically sends:
-  - `Authorization: Bearer <session.backendToken>`
+  - `Authorization: Bearer <session.apiToken>`
 
 ## Local Run
 

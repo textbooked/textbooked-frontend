@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated API clients/models:
+    "lib/api/endpoints/**",
+    "lib/api/schemas/**",
   ]),
 ]);
 

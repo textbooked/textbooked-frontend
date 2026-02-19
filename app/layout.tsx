@@ -1,13 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import { AuthButton } from "@/components/auth/auth-button";
-import { AuthGuard } from "@/components/auth/auth-guard";
-import { AuthProvider } from "@/components/auth/auth-provider";
-import { ThemeProvider } from "@/components/theme/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
 import { buildThemeInitScript } from "@/lib/theme/theme";
+import AppProviders from "@/providers/app-providers";
 
 import "./globals.css";
 
@@ -44,28 +39,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-muted/30 antialiased`}
       >
-        <ThemeProvider>
-          <AuthProvider>
-            <AuthGuard>
-              <div className="min-h-screen">
-                <header className="border-b bg-background">
-                  <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                    <Link href="/" className="text-sm font-semibold tracking-tight">
-                      Textbooked
-                    </Link>
-                    <AuthButton />
-                  </div>
-                </header>
-
-                <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-                  {children}
-                </main>
-              </div>
-            </AuthGuard>
-
-            <Toaster richColors position="top-right" />
-          </AuthProvider>
-        </ThemeProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );
