@@ -7,6 +7,8 @@
  */
 import type { CurrentUserDtoName } from './currentUserDtoName';
 import type { CurrentUserDtoImage } from './currentUserDtoImage';
+import type { CurrentUserDtoFirstName } from './currentUserDtoFirstName';
+import type { CurrentUserDtoLastName } from './currentUserDtoLastName';
 
 export interface CurrentUserDto {
   id: string;
@@ -15,4 +17,8 @@ export interface CurrentUserDto {
   name: CurrentUserDtoName;
   /** @nullable */
   image: CurrentUserDtoImage;
+  /** @nullable */
+  firstName?: CurrentUserDtoFirstName;
+  /** @nullable */
+  lastName?: CurrentUserDtoLastName;
 }

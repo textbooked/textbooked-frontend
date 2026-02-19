@@ -14,7 +14,7 @@ if (!backendUrlRaw) {
 }
 
 const backendUrl = backendUrlRaw.replace(/\/$/, "");
-const openApiPathRaw = process.env.NEXT_PUBLIC_OPENAPI_PATH ?? "/swagger-json";
+const openApiPathRaw = process.env.NEXT_PUBLIC_OPENAPI_PATH ?? "/swagger-yaml";
 const openApiPath = openApiPathRaw.startsWith("/")
   ? openApiPathRaw
   : `/${openApiPathRaw}`;
@@ -29,7 +29,7 @@ export default defineConfig({
       schemas: "./lib/api/generated/models",
       client: "fetch",
       mode: "split",
-      prettier: true,
+      prettier: false,
       override: {
         mutator: {
           path: path.resolve(process.cwd(), "lib/api/orval-mutator.ts"),

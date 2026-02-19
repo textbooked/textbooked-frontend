@@ -6,9 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type IntakeControllerAnalyze200TocPageRange = {
-  /** @minimum 1 */
-  start: number;
-  /** @minimum 1 */
-  end: number;
+export type HealthGetHealth200 = {
+  status?: string;
+  timestamp?: string;
+  db?: string;
 };

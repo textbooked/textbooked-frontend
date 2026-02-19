@@ -2,6 +2,10 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { SignJWT } from "jose";
 
+if (!process.env.AUTH_URL && process.env.NEXTAUTH_URL) {
+  process.env.AUTH_URL = process.env.NEXTAUTH_URL;
+}
+
 const authSecret = getRequiredEnv(
   "AUTH_SECRET",
   process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
@@ -20,6 +24,7 @@ const backendSigningKey = new TextEncoder().encode(backendJwtSecret);
 
 export const { handlers, auth } = NextAuth({
   secret: authSecret,
+  trustHost: true,
   session: {
     strategy: "jwt",
   },

@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type IntakeControllerFinalize200TocSummary = {
-  /** @minimum 0 */
-  totalNodes: number;
-};
+/**
+ * @nullable
+ */
+export type CurrentUserDtoFirstName = { [key: string]: unknown } | null;

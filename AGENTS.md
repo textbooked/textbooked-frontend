@@ -21,7 +21,7 @@ Guidance for coding agents working in this repository.
 ## Common Commands
 
 ```bash
-yarn gen:api
+yarn codegen
 yarn dev
 yarn lint
 yarn build
@@ -32,7 +32,7 @@ yarn build
 Required for local/prod:
 
 - `NEXT_PUBLIC_BACKEND_URL`
-- `NEXT_PUBLIC_OPENAPI_PATH` (default expected: `/swagger-json`)
+- `NEXT_PUBLIC_OPENAPI_PATH` (default expected: `/swagger-yaml`)
 - `AUTH_SECRET`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
@@ -53,7 +53,9 @@ Optional:
 
 ## API + Auth Rules
 
-- Codegen source: `${NEXT_PUBLIC_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}`
+- Codegen source:
+  - `${ORVAL_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}` (if set), else
+  - `${NEXT_PUBLIC_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}`
 - Generated output must remain committed in `lib/api/generated/`.
 - Backend auth header format: `Authorization: Bearer <token>`.
 - `session.backendToken` is the token used by API layer.
@@ -69,7 +71,7 @@ Optional:
 
 1. Read the affected route/component and API domain functions.
 2. Implement changes in the smallest coherent patch.
-3. If backend contract changes, run `yarn gen:api`.
+3. If backend contract changes, run `yarn codegen`.
 4. Run:
    - `yarn lint`
    - `yarn build`

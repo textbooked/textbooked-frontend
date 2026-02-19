@@ -16,7 +16,7 @@ Create `.env.local`:
 
 ```bash
 NEXT_PUBLIC_BACKEND_URL=https://api.textbooked.hofcoral.com
-NEXT_PUBLIC_OPENAPI_PATH=/swagger-json
+NEXT_PUBLIC_OPENAPI_PATH=/swagger-yaml
 AUTH_SECRET=change-me-to-a-long-random-secret
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
@@ -24,10 +24,14 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 # BACKEND_JWT_SECRET=change-me
 # Optional in production
 # NEXTAUTH_URL=https://your-frontend-domain.com
+# AUTH_URL=https://your-frontend-domain.com
+# AUTH_TRUST_HOST=true
 ```
 
 Notes:
 - `AUTH_SECRET` is used by Auth.js.
+- Set `AUTH_URL` to your public frontend URL (for example your nginx domain).
+- Set `AUTH_TRUST_HOST=true` behind reverse proxies so Auth.js uses forwarded host/proto headers.
 - Backend JWTs are signed with HS256 in the frontend auth callback.
 - By default, backend JWT signing uses `BACKEND_JWT_SECRET` if set, else `AUTH_SECRET`.
 - For backend verification, use the same shared secret value on backend side.
@@ -35,16 +39,18 @@ Notes:
 ## Scripts
 
 ```bash
-yarn gen:api
+yarn codegen
 yarn dev
 yarn build
 yarn lint
 ```
 
-### `yarn gen:api`
+### `yarn codegen`
 
 - Removes old generated client files via `rimraf lib/api/generated`
-- Generates API client/types with Orval from `${NEXT_PUBLIC_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}`
+- Generates API client/types with Orval from:
+  - `${ORVAL_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}` if `ORVAL_BACKEND_URL` is set
+  - otherwise `${NEXT_PUBLIC_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}`
 - Writes output to `lib/api/generated`
 
 ## Google OAuth Setup
@@ -70,7 +76,7 @@ yarn lint
 2. Run codegen:
 
 ```bash
-yarn gen:api
+yarn codegen
 ```
 
 3. Start frontend:

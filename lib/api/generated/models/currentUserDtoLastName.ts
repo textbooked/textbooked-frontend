@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type IntakeControllerFinalize200PaceSummary = {
-  /** @minimum 1 */
-  totalOptions: number;
-};
+/**
+ * @nullable
+ */
+export type CurrentUserDtoLastName = { [key: string]: unknown } | null;
