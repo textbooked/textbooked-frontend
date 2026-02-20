@@ -35,7 +35,7 @@ export function AuthButton() {
 
   if (status !== "authenticated") {
     return (
-      <Button type="button" size="sm" onClick={() => void signIn("google")}>
+      <Button type="button" size="sm" onClick={() => signIn("google")}>
         Sign in with Google
       </Button>
     );

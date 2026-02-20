@@ -18,5 +18,10 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     apiToken?: string;
+    apiTokenExp?: number;
+    givenName?: string;
+    familyName?: string;
+    locale?: string;
+    emailVerified?: boolean;
   }
 }

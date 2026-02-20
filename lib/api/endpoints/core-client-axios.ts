@@ -18,9 +18,6 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
   export const getTextbookedBackendAPI = () => {
-/**
- * @summary Get current authenticated user
- */
 const authGetMe = (
     
  options?: SecondParameter<typeof authGetMeMutator>,) => {

@@ -32,9 +32,6 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
-/**
- * @summary Get current authenticated user
- */
 export const authGetMe = (
     
  options?: SecondParameter<typeof authGetMeMutator>,signal?: AbortSignal
@@ -99,9 +96,6 @@ export function useAuthGetMe<TData = Awaited<ReturnType<typeof authGetMe>>, TErr
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authGetMe>>, TError, TData>>, request?: SecondParameter<typeof authGetMeMutator>}
 
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Get current authenticated user
- */
 
 export function useAuthGetMe<TData = Awaited<ReturnType<typeof authGetMe>>, TError = void>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authGetMe>>, TError, TData>>, request?: SecondParameter<typeof authGetMeMutator>}

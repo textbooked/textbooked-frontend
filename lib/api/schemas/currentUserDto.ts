@@ -13,12 +13,8 @@ import type { CurrentUserDtoLastName } from './currentUserDtoLastName';
 export interface CurrentUserDto {
   id: string;
   email: string;
-  /** @nullable */
-  name: CurrentUserDtoName;
-  /** @nullable */
-  image: CurrentUserDtoImage;
-  /** @nullable */
+  name?: CurrentUserDtoName;
+  image?: CurrentUserDtoImage;
   firstName?: CurrentUserDtoFirstName;
-  /** @nullable */
   lastName?: CurrentUserDtoLastName;
 }

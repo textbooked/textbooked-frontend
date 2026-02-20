@@ -6,7 +6,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-/**
- * @nullable
- */
-export type CurrentUserDtoFirstName = { [key: string]: unknown } | null;
+export type CurrentUserDtoFirstName = { [key: string]: unknown };
