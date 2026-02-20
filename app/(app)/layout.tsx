@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { AuthButton } from "@/components/auth/auth-button";
+import { AvatarMenu } from "@/components/navigation/avatar-menu";
 
 import { AuthGuard } from "./components/auth-guard";
 
@@ -12,7 +12,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-4">
               <Link href="/" className="text-sm font-semibold tracking-tight">
-                Textbooked
+                Textbooked.org
               </Link>
               <nav className="hidden items-center gap-3 text-sm text-muted-foreground sm:flex">
                 <Link href="/" className="transition-colors hover:text-foreground">
@@ -23,7 +23,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </Link>
               </nav>
             </div>
-            <AuthButton />
+            <AvatarMenu />
           </div>
         </header>
 

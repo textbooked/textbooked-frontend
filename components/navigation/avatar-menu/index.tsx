@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function AuthButton() {
+export function AvatarMenu() {
   const { data: session, status } = useSession();
   const { theme, toggleTheme } = useTheme();
 
@@ -48,7 +48,7 @@ export function AuthButton() {
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="relative z-[60] cursor-pointer rounded-full p-0 hover:translate-y-0 active:translate-y-0 focus-visible:border-transparent focus-visible:ring-0"
+          className="relative z-[60] cursor-pointer select-none rounded-full p-0 hover:translate-y-0 active:translate-y-0 focus-visible:border-transparent focus-visible:ring-0"
           aria-label="Open account menu"
         >
           <AccountAvatar
@@ -127,7 +127,7 @@ function AccountAvatar({
 
   return (
     <span
-      className={`relative flex ${wrapperSizeClass} items-center justify-center overflow-hidden rounded-full bg-muted text-xs font-semibold text-foreground ring-[3px] ring-foreground/25 dark:ring-white/55 shadow-[0_3px_12px_hsl(var(--foreground)/0.08)] dark:shadow-[0_0_14px_hsl(0_0%_100%/0.16)]`}
+      className={`relative flex ${wrapperSizeClass} select-none items-center justify-center overflow-hidden rounded-full bg-muted text-xs font-semibold text-foreground ring-[3px] ring-foreground/25 dark:ring-white/55 shadow-[0_3px_12px_hsl(var(--foreground)/0.08)] dark:shadow-[0_0_14px_hsl(0_0%_100%/0.16)]`}
     >
       {avatarUrl ? (
         <Image
@@ -135,7 +135,8 @@ function AccountAvatar({
           alt={userName}
           width={imageSize}
           height={imageSize}
-          className={`${wrapperSizeClass} rounded-full object-cover`}
+          draggable={false}
+          className={`${wrapperSizeClass} pointer-events-none select-none rounded-full object-cover`}
         />
       ) : (
         avatarLetter || <UserCircle2 className="size-4" />
