@@ -1,5 +1,5 @@
-import { LibraryPage } from "./components/library-page";
+import { HomePage } from "./components/home-page";
 
-export default function Page() {
-  return <LibraryPage />;
-}
+const Page = () => (<HomePage />)
+
+export default Page;

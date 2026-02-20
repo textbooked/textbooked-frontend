@@ -23,7 +23,7 @@ type RewritePlaceholderProps = {
 export function RewritePlaceholder({
   actions,
   backHref,
-  backLabel = "Back to Library",
+  backLabel = "Back to Home",
   cardDescription,
   cardTitle,
   subtitle,

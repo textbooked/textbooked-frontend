@@ -121,17 +121,24 @@ Frontend runs on [http://localhost:3001](http://localhost:3001).
 
 ## Implemented Routes
 
-- `/` Library
+- `/` Home
+- `/library` Library workspace
+- `/onboarding` Full-screen onboarding wizard (GUIDED / SOURCE_FOCUSED)
 - `/books/new` Add Book
 - `/books/[id]` Book Overview (ToC upload, pace generation, plan creation)
 - `/plans/[planId]` Plan View (grouping + optimistic status toggle)
 - `/toc/[nodeId]` ToC Node View (assignment + attempts)
+
+The dashboard (`/`) includes onboarding CTA: `Create your first study plan`.
 
 ## Backend Assumptions and Prerequisites
 
 The frontend expects these backend endpoints for full MVP behavior:
 
 - `GET /books`
+- `GET /onboarding/status`
+- `POST /onboarding/study-plans`
+- `POST /study-plans/:id/repace`
 - `PATCH /plan-items/:id/status`
 - `GET /toc/:nodeId`
 - `GET /questions/:id/attempts`

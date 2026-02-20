@@ -12,7 +12,7 @@ const FAQ_ITEMS: FaqItem[] = [
     id: "book-setup",
     question: "How do I get started with a new textbook?",
     answer:
-      "Add your textbook from the Library, then open it, generate pace options, and create a plan. Once the plan is created, start from the current section in the Plan tab.",
+      "Start from Home and create your first study plan. You can also open the Library to manage sources, then create and run your plan from there.",
   },
   {
     id: "activities",

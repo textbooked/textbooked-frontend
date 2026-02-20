@@ -48,29 +48,35 @@ export function AuthButton() {
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="rounded-full"
+          className="relative z-[60] cursor-pointer rounded-full p-0 hover:translate-y-0 active:translate-y-0 focus-visible:border-transparent focus-visible:ring-0"
           aria-label="Open account menu"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
-            {avatarUrl ? (
-              <Image
-                src={avatarUrl}
-                alt={userName}
-                width={32}
-                height={32}
-                className="h-8 w-8 rounded-full object-cover"
-              />
-            ) : (
-              avatarLetter || <UserCircle2 className="size-4" />
-            )}
-          </span>
+          <AccountAvatar
+            userName={userName}
+            avatarUrl={avatarUrl}
+            avatarLetter={avatarLetter}
+          />
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="space-y-1 py-2">
-          <p className="text-sm font-semibold text-muted-foreground">{userName}</p>
-          {userEmail ? <p className="truncate text-xs text-muted-foreground/90">{userEmail}</p> : null}
+      <DropdownMenuContent
+        align="end"
+        side="bottom"
+        className="w-64"
+      >
+        <DropdownMenuLabel className="py-1">
+          <div className="flex min-h-8 min-w-0 items-center">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold leading-4 text-muted-foreground">
+                {userName}
+              </p>
+              {userEmail ? (
+                <p className="truncate text-xs leading-4 text-muted-foreground/90">
+                  {userEmail}
+                </p>
+              ) : null}
+            </div>
+          </div>
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />
@@ -102,5 +108,38 @@ export function AuthButton() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+type AccountAvatarProps = {
+  userName: string;
+  avatarUrl?: string | null;
+  avatarLetter: string;
+};
+
+function AccountAvatar({
+  userName,
+  avatarUrl,
+  avatarLetter,
+}: AccountAvatarProps) {
+  const wrapperSizeClass = "h-8 w-8";
+  const imageSize = 32;
+
+  return (
+    <span
+      className={`relative flex ${wrapperSizeClass} items-center justify-center overflow-hidden rounded-full bg-muted text-xs font-semibold text-foreground ring-[3px] ring-foreground/25 dark:ring-white/55 shadow-[0_3px_12px_hsl(var(--foreground)/0.08)] dark:shadow-[0_0_14px_hsl(0_0%_100%/0.16)]`}
+    >
+      {avatarUrl ? (
+        <Image
+          src={avatarUrl}
+          alt={userName}
+          width={imageSize}
+          height={imageSize}
+          className={`${wrapperSizeClass} rounded-full object-cover`}
+        />
+      ) : (
+        avatarLetter || <UserCircle2 className="size-4" />
+      )}
+    </span>
   );
 }

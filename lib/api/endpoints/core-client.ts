@@ -6,25 +6,37 @@
  * OpenAPI spec version: 1.0.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
+  CreateOnboardingStudyPlanRequestDto,
+  CreateOnboardingStudyPlanResponseDto,
   CurrentUserDto,
-  HealthGetHealth200
+  HealthGetHealth200,
+  OnboardingStatusDto,
+  RepaceStudyPlanRequestDto,
+  RepaceStudyPlanResponseDto
 } from '../schemas';
 
 import authGetMeMutator from '../axios';
+import onboardingGetStatusMutator from '../axios';
+import onboardingCreateStudyPlanMutator from '../axios';
+import studyPlansRepaceMutator from '../axios';
 import healthGetHealthMutator from '../axios';
 
 
@@ -114,6 +126,225 @@ export function useAuthGetMe<TData = Awaited<ReturnType<typeof authGetMe>>, TErr
 
 
 
+/**
+ * @summary Get onboarding state for the authenticated user
+ */
+export const onboardingGetStatus = (
+    
+ options?: SecondParameter<typeof onboardingGetStatusMutator>,signal?: AbortSignal
+) => {
+      
+      
+      return onboardingGetStatusMutator<OnboardingStatusDto>(
+      {url: `/onboarding/status`, method: 'GET', signal
+    },
+      options);
+    }
+  
+
+export const getOnboardingGetStatusQueryKey = () => {
+    return [`/onboarding/status`] as const;
+    }
+
+    
+export const getOnboardingGetStatusQueryOptions = <TData = Awaited<ReturnType<typeof onboardingGetStatus>>, TError = void>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof onboardingGetStatus>>, TError, TData>>, request?: SecondParameter<typeof onboardingGetStatusMutator>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getOnboardingGetStatusQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof onboardingGetStatus>>> = ({ signal }) => onboardingGetStatus(requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof onboardingGetStatus>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type OnboardingGetStatusQueryResult = NonNullable<Awaited<ReturnType<typeof onboardingGetStatus>>>
+export type OnboardingGetStatusQueryError = void
+
+
+export function useOnboardingGetStatus<TData = Awaited<ReturnType<typeof onboardingGetStatus>>, TError = void>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof onboardingGetStatus>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof onboardingGetStatus>>,
+          TError,
+          Awaited<ReturnType<typeof onboardingGetStatus>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof onboardingGetStatusMutator>}
+
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useOnboardingGetStatus<TData = Awaited<ReturnType<typeof onboardingGetStatus>>, TError = void>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof onboardingGetStatus>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof onboardingGetStatus>>,
+          TError,
+          Awaited<ReturnType<typeof onboardingGetStatus>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof onboardingGetStatusMutator>}
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useOnboardingGetStatus<TData = Awaited<ReturnType<typeof onboardingGetStatus>>, TError = void>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof onboardingGetStatus>>, TError, TData>>, request?: SecondParameter<typeof onboardingGetStatusMutator>}
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get onboarding state for the authenticated user
+ */
+
+export function useOnboardingGetStatus<TData = Awaited<ReturnType<typeof onboardingGetStatus>>, TError = void>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof onboardingGetStatus>>, TError, TData>>, request?: SecondParameter<typeof onboardingGetStatusMutator>}
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getOnboardingGetStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+/**
+ * @summary Create first study plan from onboarding wizard input
+ */
+export const onboardingCreateStudyPlan = (
+    createOnboardingStudyPlanRequestDto: CreateOnboardingStudyPlanRequestDto,
+ options?: SecondParameter<typeof onboardingCreateStudyPlanMutator>,signal?: AbortSignal
+) => {
+      
+      
+      return onboardingCreateStudyPlanMutator<CreateOnboardingStudyPlanResponseDto>(
+      {url: `/onboarding/study-plans`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createOnboardingStudyPlanRequestDto, signal
+    },
+      options);
+    }
+  
+
+
+export const getOnboardingCreateStudyPlanMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof onboardingCreateStudyPlan>>, TError,{data: CreateOnboardingStudyPlanRequestDto}, TContext>, request?: SecondParameter<typeof onboardingCreateStudyPlanMutator>}
+): UseMutationOptions<Awaited<ReturnType<typeof onboardingCreateStudyPlan>>, TError,{data: CreateOnboardingStudyPlanRequestDto}, TContext> => {
+    
+const mutationKey = ['onboardingCreateStudyPlan'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof onboardingCreateStudyPlan>>, {data: CreateOnboardingStudyPlanRequestDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  onboardingCreateStudyPlan(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OnboardingCreateStudyPlanMutationResult = NonNullable<Awaited<ReturnType<typeof onboardingCreateStudyPlan>>>
+    export type OnboardingCreateStudyPlanMutationBody = CreateOnboardingStudyPlanRequestDto
+    export type OnboardingCreateStudyPlanMutationError = void
+
+    /**
+ * @summary Create first study plan from onboarding wizard input
+ */
+export const useOnboardingCreateStudyPlan = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof onboardingCreateStudyPlan>>, TError,{data: CreateOnboardingStudyPlanRequestDto}, TContext>, request?: SecondParameter<typeof onboardingCreateStudyPlanMutator>}
+): UseMutationResult<
+        Awaited<ReturnType<typeof onboardingCreateStudyPlan>>,
+        TError,
+        {data: CreateOnboardingStudyPlanRequestDto},
+        TContext
+      > => {
+
+      const mutationOptions = getOnboardingCreateStudyPlanMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    
+/**
+ * @summary Repace unfinished learning units without touching completed progress
+ */
+export const studyPlansRepace = (
+    id: string,
+    repaceStudyPlanRequestDto: RepaceStudyPlanRequestDto,
+ options?: SecondParameter<typeof studyPlansRepaceMutator>,signal?: AbortSignal
+) => {
+      
+      
+      return studyPlansRepaceMutator<RepaceStudyPlanResponseDto>(
+      {url: `/study-plans/${id}/repace`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: repaceStudyPlanRequestDto, signal
+    },
+      options);
+    }
+  
+
+
+export const getStudyPlansRepaceMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof studyPlansRepace>>, TError,{id: string;data: RepaceStudyPlanRequestDto}, TContext>, request?: SecondParameter<typeof studyPlansRepaceMutator>}
+): UseMutationOptions<Awaited<ReturnType<typeof studyPlansRepace>>, TError,{id: string;data: RepaceStudyPlanRequestDto}, TContext> => {
+    
+const mutationKey = ['studyPlansRepace'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof studyPlansRepace>>, {id: string;data: RepaceStudyPlanRequestDto}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  studyPlansRepace(id,data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StudyPlansRepaceMutationResult = NonNullable<Awaited<ReturnType<typeof studyPlansRepace>>>
+    export type StudyPlansRepaceMutationBody = RepaceStudyPlanRequestDto
+    export type StudyPlansRepaceMutationError = void
+
+    /**
+ * @summary Repace unfinished learning units without touching completed progress
+ */
+export const useStudyPlansRepace = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof studyPlansRepace>>, TError,{id: string;data: RepaceStudyPlanRequestDto}, TContext>, request?: SecondParameter<typeof studyPlansRepaceMutator>}
+): UseMutationResult<
+        Awaited<ReturnType<typeof studyPlansRepace>>,
+        TError,
+        {id: string;data: RepaceStudyPlanRequestDto},
+        TContext
+      > => {
+
+      const mutationOptions = getStudyPlansRepaceMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    
 /**
  * @summary Health check
  */

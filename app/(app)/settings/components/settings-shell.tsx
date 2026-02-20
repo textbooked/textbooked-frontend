@@ -31,7 +31,7 @@ export function SettingsShell({ children }: SettingsShellProps) {
           <Button asChild variant="ghost">
             <Link href="/">
               <ArrowLeft className="size-4" />
-              Back to Library
+              Back to Home
             </Link>
           </Button>
         </div>
