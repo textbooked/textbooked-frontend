@@ -48,7 +48,7 @@ export function AvatarMenu() {
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="relative z-[60] cursor-pointer select-none rounded-full p-0 hover:translate-y-0 active:translate-y-0 focus-visible:border-transparent focus-visible:ring-0"
+          className="relative z-[60] cursor-pointer select-none rounded-full border-transparent bg-transparent p-0 shadow-none hover:translate-y-0 hover:border-transparent hover:bg-transparent active:translate-y-0 dark:hover:bg-transparent focus-visible:border-transparent focus-visible:ring-0"
           aria-label="Open account menu"
         >
           <AccountAvatar
