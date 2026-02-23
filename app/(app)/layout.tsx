@@ -1,0 +1,39 @@
+import Link from "next/link";
+
+import { AvatarMenu } from "@/components/navigation/avatar-menu";
+import { MobileBottomNav } from "@/components/navigation/mobile-bottom-nav";
+
+import { AuthGuard } from "./components/auth-guard";
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthGuard>
+      <div className="min-h-screen">
+        <header className="hidden border-b bg-background sm:block">
+          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-4">
+              <Link href="/" className="text-sm font-semibold tracking-tight">
+                Textbooked.org
+              </Link>
+              <nav className="hidden items-center gap-3 text-sm text-muted-foreground sm:flex">
+                <Link href="/" className="transition-colors hover:text-foreground">
+                  Home
+                </Link>
+                <Link href="/library" className="transition-colors hover:text-foreground">
+                  Library
+                </Link>
+              </nav>
+            </div>
+            <AvatarMenu />
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-6xl px-4 pt-6 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6 sm:pb-6 lg:px-8">
+          {children}
+        </main>
+
+        <MobileBottomNav />
+      </div>
+    </AuthGuard>
+  );
+}

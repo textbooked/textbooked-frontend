@@ -16,7 +16,7 @@ Create `.env.local`:
 
 ```bash
 NEXT_PUBLIC_BACKEND_URL=https://api.textbooked.hofcoral.com
-NEXT_PUBLIC_OPENAPI_PATH=/swagger-json
+NEXT_PUBLIC_OPENAPI_PATH=/swagger-yaml
 AUTH_SECRET=change-me-to-a-long-random-secret
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
@@ -24,10 +24,14 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 # BACKEND_JWT_SECRET=change-me
 # Optional in production
 # NEXTAUTH_URL=https://your-frontend-domain.com
+# AUTH_URL=https://your-frontend-domain.com
+# AUTH_TRUST_HOST=true
 ```
 
 Notes:
 - `AUTH_SECRET` is used by Auth.js.
+- Set `AUTH_URL` to your public frontend URL (for example your nginx domain).
+- Set `AUTH_TRUST_HOST=true` behind reverse proxies so Auth.js uses forwarded host/proto headers.
 - Backend JWTs are signed with HS256 in the frontend auth callback.
 - By default, backend JWT signing uses `BACKEND_JWT_SECRET` if set, else `AUTH_SECRET`.
 - For backend verification, use the same shared secret value on backend side.
@@ -35,17 +39,51 @@ Notes:
 ## Scripts
 
 ```bash
-yarn gen:api
+yarn codegen
+yarn check:structure
+yarn g:component components/shared/MyComponent --client
+yarn g:component app/'(public)'/help/components HelpPanel --client
+yarn g:component components/complex/AccountPanel AccountPanel --client --structured
 yarn dev
 yarn build
 yarn lint
 ```
 
-### `yarn gen:api`
+### `yarn codegen`
 
-- Removes old generated client files via `rimraf lib/api/generated`
-- Generates API client/types with Orval from `${NEXT_PUBLIC_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}`
-- Writes output to `lib/api/generated`
+- Removes old generated client files via `rimraf lib/api/endpoints lib/api/schemas`
+- Generates both clients with Orval from:
+  - `${ORVAL_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}` if `ORVAL_BACKEND_URL` is set
+  - otherwise `${NEXT_PUBLIC_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}`
+- Writes output to:
+  - `lib/api/endpoints/core-client.ts` (`react-query` hooks client)
+  - `lib/api/endpoints/core-client-axios.ts` (plain axios client)
+  - `lib/api/schemas/*` (shared models)
+
+## Component Architecture
+
+The frontend uses a route-centric App Router layout:
+
+- `app/**/page.tsx` and `app/**/layout.tsx` are Next.js route entrypoints.
+- Route-specific modules are colocated under each route segment:
+  - `app/**/components`
+  - `app/**/hooks`
+  - `app/**/lib`
+  - `app/**/types.ts`
+- Reusable shared components live in `components/`.
+- Global providers live in `providers/`.
+
+Component patterns:
+
+- Keep components minimal by default (`index.tsx` is enough for simple components).
+- Use `createComponent` selectively for complex reusable components only.
+- `style.ts` is optional and should be used only for reusable CVA variants/tokens.
+
+Structure rules enforced by `yarn check:structure`:
+
+- No `app/**/_screen` or `app/**/_layout` directories.
+- No `legacy.tsx` compatibility files.
+- No explicit `createComponent<...>` generic syntax.
 
 ## Google OAuth Setup
 
@@ -59,10 +97,10 @@ yarn lint
 
 - Google sign-in only.
 - JWT session strategy.
-- Session includes `session.backendToken` (HS256 token) used for backend Bearer auth.
+- Session includes `session.apiToken` (HS256 token) used for backend Bearer auth.
 - After sign-in, frontend calls backend `GET /auth/me` to ensure the backend user row is synced/created.
 - API adapter automatically sends:
-  - `Authorization: Bearer <session.backendToken>`
+  - `Authorization: Bearer <session.apiToken>`
 
 ## Local Run
 
@@ -70,7 +108,7 @@ yarn lint
 2. Run codegen:
 
 ```bash
-yarn gen:api
+yarn codegen
 ```
 
 3. Start frontend:
@@ -83,17 +121,24 @@ Frontend runs on [http://localhost:3001](http://localhost:3001).
 
 ## Implemented Routes
 
-- `/` Library
+- `/` Home
+- `/library` Library workspace
+- `/onboarding` Full-screen onboarding wizard (GUIDED / SOURCE_FOCUSED)
 - `/books/new` Add Book
 - `/books/[id]` Book Overview (ToC upload, pace generation, plan creation)
 - `/plans/[planId]` Plan View (grouping + optimistic status toggle)
 - `/toc/[nodeId]` ToC Node View (assignment + attempts)
+
+The dashboard (`/`) includes onboarding CTA: `Create your first study plan`.
 
 ## Backend Assumptions and Prerequisites
 
 The frontend expects these backend endpoints for full MVP behavior:
 
 - `GET /books`
+- `GET /onboarding/status`
+- `POST /onboarding/study-plans`
+- `POST /study-plans/:id/repace`
 - `PATCH /plan-items/:id/status`
 - `GET /toc/:nodeId`
 - `GET /questions/:id/attempts`

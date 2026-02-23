@@ -21,7 +21,11 @@ Guidance for coding agents working in this repository.
 ## Common Commands
 
 ```bash
-yarn gen:api
+yarn codegen
+yarn check:structure
+yarn g:component components/shared/MyComponent --client
+yarn g:component app/'(public)'/help/components HelpPanel --client
+yarn g:component components/complex/AccountPanel AccountPanel --client --structured
 yarn dev
 yarn lint
 yarn build
@@ -32,7 +36,7 @@ yarn build
 Required for local/prod:
 
 - `NEXT_PUBLIC_BACKEND_URL`
-- `NEXT_PUBLIC_OPENAPI_PATH` (default expected: `/swagger-json`)
+- `NEXT_PUBLIC_OPENAPI_PATH` (default expected: `/swagger-yaml`)
 - `AUTH_SECRET`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
@@ -44,19 +48,40 @@ Optional:
 
 ## Repository Layout
 
-- `app/` route pages and route handlers
-- `components/` UI and feature components
+- `app/` Next.js route entries and route-local modules
+- `providers/` global providers (`SessionProvider`, theme, toasts)
+- `components/` reusable shared components and UI primitives
 - `lib/api/` API config, mutator, request helpers, domain endpoints
-- `lib/api/generated/` Orval-generated client and models (committed)
+- `lib/api/endpoints/` Orval-generated clients (committed)
+- `lib/api/schemas/` Orval-generated models (committed)
 - `lib/auth/` token helpers
 - `lib/utils/` shared utilities
 
+## Component Architecture
+
+- `app/**/page.tsx` and `app/**/layout.tsx` are Next.js route entrypoints.
+- Colocate route-specific modules under each route segment:
+  - `app/**/components`
+  - `app/**/hooks`
+  - `app/**/lib`
+  - `app/**/types.ts`
+- Keep components minimal by default (`index.tsx` only when enough).
+- Use `createComponent` selectively for complex reusable components only.
+- `style.ts` is optional and should be used only for reusable CVA/tokens.
+- Forbidden:
+  - `app/**/_screen`
+  - `app/**/_layout`
+  - `legacy.tsx`
+  - explicit `createComponent<...>` generic syntax
+
 ## API + Auth Rules
 
-- Codegen source: `${NEXT_PUBLIC_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}`
-- Generated output must remain committed in `lib/api/generated/`.
+- Codegen source:
+  - `${ORVAL_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}` (if set), else
+  - `${NEXT_PUBLIC_BACKEND_URL}${NEXT_PUBLIC_OPENAPI_PATH}`
+- Generated output must remain committed in `lib/api/endpoints/` and `lib/api/schemas/`.
 - Backend auth header format: `Authorization: Bearer <token>`.
-- `session.backendToken` is the token used by API layer.
+- `session.apiToken` is the token used by API layer.
 
 ## UI/UX Baseline
 
@@ -69,7 +94,7 @@ Optional:
 
 1. Read the affected route/component and API domain functions.
 2. Implement changes in the smallest coherent patch.
-3. If backend contract changes, run `yarn gen:api`.
+3. If backend contract changes, run `yarn codegen`.
 4. Run:
    - `yarn lint`
    - `yarn build`
