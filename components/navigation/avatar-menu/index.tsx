@@ -15,8 +15,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
-export function AvatarMenu() {
+type AvatarMenuProps = {
+  dropdownSide?: "top" | "bottom";
+  triggerClassName?: string;
+};
+
+export function AvatarMenu({
+  dropdownSide = "bottom",
+  triggerClassName,
+}: AvatarMenuProps = {}) {
   const { data: session, status } = useSession();
   const { theme, toggleTheme } = useTheme();
 
@@ -48,7 +57,10 @@ export function AvatarMenu() {
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="relative z-[60] cursor-pointer select-none rounded-full border-transparent bg-transparent p-0 shadow-none hover:translate-y-0 hover:border-transparent hover:bg-transparent active:translate-y-0 dark:hover:bg-transparent focus-visible:border-transparent focus-visible:ring-0"
+          className={cn(
+            "relative z-[60] cursor-pointer select-none rounded-full border-transparent bg-transparent p-0 shadow-none hover:translate-y-0 hover:border-transparent hover:bg-transparent active:translate-y-0 dark:hover:bg-transparent focus-visible:border-transparent focus-visible:ring-0",
+            triggerClassName,
+          )}
           aria-label="Open account menu"
         >
           <AccountAvatar
@@ -61,7 +73,7 @@ export function AvatarMenu() {
 
       <DropdownMenuContent
         align="end"
-        side="bottom"
+        side={dropdownSide}
         className="w-64"
       >
         <DropdownMenuLabel className="py-1">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AvatarMenu } from "@/components/navigation/avatar-menu";
+import { MobileBottomNav } from "@/components/navigation/mobile-bottom-nav";
 
 import { AuthGuard } from "./components/auth-guard";
 
@@ -8,7 +9,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
       <div className="min-h-screen">
-        <header className="border-b bg-background">
+        <header className="hidden border-b bg-background sm:block">
           <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-4">
               <Link href="/" className="text-sm font-semibold tracking-tight">
@@ -27,9 +28,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        <main className="mx-auto max-w-6xl px-4 pt-6 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6 sm:pb-6 lg:px-8">
           {children}
         </main>
+
+        <MobileBottomNav />
       </div>
     </AuthGuard>
   );
