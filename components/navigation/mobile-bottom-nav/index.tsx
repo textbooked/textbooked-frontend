@@ -74,6 +74,7 @@ export function MobileBottomNav() {
   const [dragPreviewIndex, setDragPreviewIndex] = useState<number | null>(null);
   const [dragIndicatorLeftPercent, setDragIndicatorLeftPercent] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isIndicatorSliding, setIsIndicatorSliding] = useState(false);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const navRef = useRef<HTMLElement | null>(null);
   const activePointerIdRef = useRef<number | null>(null);
@@ -82,6 +83,8 @@ export function MobileBottomNav() {
   const suppressPointerClickRef = useRef(false);
   const releaseCleanupTimerRef = useRef<number | null>(null);
   const dragPreviewCleanupTimerRef = useRef<number | null>(null);
+  const indicatorSlideTimerRef = useRef<number | null>(null);
+  const hasMountedRef = useRef(false);
 
   const activeRouteIndex = useMemo(
     () =>
@@ -105,8 +108,43 @@ export function MobileBottomNav() {
       if (dragPreviewCleanupTimerRef.current) {
         window.clearTimeout(dragPreviewCleanupTimerRef.current);
       }
+      if (indicatorSlideTimerRef.current) {
+        window.clearTimeout(indicatorSlideTimerRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    if (activeTabIndex < 0) {
+      return;
+    }
+
+    if (indicatorSlideTimerRef.current) {
+      window.clearTimeout(indicatorSlideTimerRef.current);
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      setIsIndicatorSliding(true);
+    });
+
+    indicatorSlideTimerRef.current = window.setTimeout(() => {
+      setIsIndicatorSliding(false);
+      indicatorSlideTimerRef.current = null;
+    }, 220);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      if (indicatorSlideTimerRef.current) {
+        window.clearTimeout(indicatorSlideTimerRef.current);
+        indicatorSlideTimerRef.current = null;
+      }
+    };
+  }, [activeTabIndex]);
 
   const clearDragState = () => {
     setIsDragging(false);
@@ -215,6 +253,11 @@ export function MobileBottomNav() {
     if (!dragActivatedRef.current && moveDistance >= 8) {
       dragActivatedRef.current = true;
       setIsDragging(true);
+      setIsIndicatorSliding(false);
+      if (indicatorSlideTimerRef.current) {
+        window.clearTimeout(indicatorSlideTimerRef.current);
+        indicatorSlideTimerRef.current = null;
+      }
     }
 
     if (!dragActivatedRef.current) {
@@ -298,6 +341,8 @@ export function MobileBottomNav() {
     commitTabSelection(index);
   };
 
+  const indicatorScaleY = isDragging ? 0.94 : isIndicatorSliding ? 0.965 : 1;
+
   return (
     <>
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:hidden">
@@ -316,7 +361,7 @@ export function MobileBottomNav() {
                 <div className="relative h-full">
                   <span
                     className={cn(
-                      "absolute inset-y-0 w-1/5 rounded-xl border bg-background/60 shadow-[0_6px_18px_hsl(var(--foreground)/0.08),inset_0_1px_0_hsl(var(--background)/0.55)] backdrop-blur-md transition-[left,opacity] duration-300 ease-out dark:bg-white/8 dark:shadow-[0_8px_20px_hsl(0_0%_0%/0.32),inset_0_1px_0_hsl(0_0%_100%/0.06)]",
+                      "absolute inset-y-0 w-1/5 rounded-xl border bg-background/60 shadow-[0_6px_18px_hsl(var(--foreground)/0.08),inset_0_1px_0_hsl(var(--background)/0.55)] backdrop-blur-md transition-[left,opacity,transform] duration-300 ease-out will-change-transform dark:bg-white/8 dark:shadow-[0_8px_20px_hsl(0_0%_0%/0.32),inset_0_1px_0_hsl(0_0%_100%/0.06)]",
                       hasActiveTab
                         ? "opacity-100 border-foreground/12 dark:border-white/14"
                         : "opacity-0 border-transparent",
@@ -327,6 +372,7 @@ export function MobileBottomNav() {
                         dragIndicatorLeftPercent != null
                           ? `${dragIndicatorLeftPercent}%`
                           : `${activeIndicatorLeftPercent}%`,
+                      transform: `scaleY(${indicatorScaleY})`,
                     }}
                   />
                 </div>
