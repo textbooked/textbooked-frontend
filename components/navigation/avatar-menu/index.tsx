@@ -20,11 +20,15 @@ import { cn } from "@/lib/utils";
 type AvatarMenuProps = {
   dropdownSide?: "top" | "bottom";
   triggerClassName?: string;
+  avatarSizeClassName?: string;
+  showAvatarRing?: boolean;
 };
 
 export function AvatarMenu({
   dropdownSide = "bottom",
   triggerClassName,
+  avatarSizeClassName,
+  showAvatarRing = true,
 }: AvatarMenuProps = {}) {
   const { data: session, status } = useSession();
   const { theme, toggleTheme } = useTheme();
@@ -67,6 +71,8 @@ export function AvatarMenu({
             userName={userName}
             avatarUrl={avatarUrl}
             avatarLetter={avatarLetter}
+            sizeClassName={avatarSizeClassName}
+            showRing={showAvatarRing}
           />
         </Button>
       </DropdownMenuTrigger>
@@ -127,19 +133,28 @@ type AccountAvatarProps = {
   userName: string;
   avatarUrl?: string | null;
   avatarLetter: string;
+  sizeClassName?: string;
+  showRing?: boolean;
 };
 
 function AccountAvatar({
   userName,
   avatarUrl,
   avatarLetter,
+  sizeClassName,
+  showRing = true,
 }: AccountAvatarProps) {
-  const wrapperSizeClass = "h-8 w-8";
+  const wrapperSizeClass = sizeClassName ?? "h-8 w-8";
   const imageSize = 32;
 
   return (
     <span
-      className={`relative flex ${wrapperSizeClass} select-none items-center justify-center overflow-hidden rounded-full bg-muted text-xs font-semibold text-foreground ring-[3px] ring-foreground/25 dark:ring-white/55 shadow-[0_3px_12px_hsl(var(--foreground)/0.08)] dark:shadow-[0_0_14px_hsl(0_0%_100%/0.16)]`}
+      className={cn(
+        `relative flex ${wrapperSizeClass} select-none items-center justify-center overflow-hidden rounded-full bg-muted text-xs font-semibold text-foreground`,
+        showRing
+          ? "ring-[3px] ring-foreground/25 dark:ring-white/55 shadow-[0_3px_12px_hsl(var(--foreground)/0.08)] dark:shadow-[0_0_14px_hsl(0_0%_100%/0.16)]"
+          : "",
+      )}
     >
       {avatarUrl ? (
         <Image
