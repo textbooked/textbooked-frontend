@@ -351,7 +351,7 @@ export function MobileBottomNav() {
             <nav
               ref={navRef}
               aria-label="Primary navigation"
-              className="relative grid h-[4.25rem] grid-cols-5 touch-pan-y rounded-[1.35rem] border border-border/60 bg-background/70 p-1.5 shadow-[0_10px_28px_hsl(var(--foreground)/0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-background/60"
+              className="relative grid h-[4.25rem] grid-cols-5 touch-pan-y rounded-2xl border border-border/60 bg-background/70 p-1.5 shadow-[0_10px_28px_hsl(var(--foreground)/0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-background/60"
               onPointerDown={handleNavPointerDown}
               onPointerMove={handleNavPointerMove}
               onPointerUp={handleNavPointerEnd}
