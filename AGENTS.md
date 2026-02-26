@@ -16,6 +16,8 @@ Guidance for coding agents working in this repository.
 - Do not call backend endpoints with raw `fetch` from pages/components.
 - Route all API calls through `lib/api/*` domain functions.
 - Keep changes minimal and focused; avoid overengineering.
+- Use named `const`s for magic numbers/strings and extract shared config into `consts.ts` once a file grows beyond simple local usage.
+- Extract non-trivial shared types into colocated `types.ts` (or feature-level `types.ts`) instead of redefining them in multiple files.
 - Never commit secrets (`.env`, OAuth secrets, tokens).
 
 ## Common Commands
@@ -65,6 +67,7 @@ Optional:
   - `app/**/hooks`
   - `app/**/lib`
   - `app/**/types.ts`
+- For reusable shared components/features, prefer `consts.ts` and `types.ts` once config/types exceed simple local usage.
 - Keep components minimal by default (`index.tsx` only when enough).
 - Use `createComponent` selectively for complex reusable components only.
 - `style.ts` is optional and should be used only for reusable CVA/tokens.

@@ -1,9 +1,10 @@
-export const THEME_STORAGE_KEY = "textbooked-theme";
-export const FAVICON_LIGHT_PATH = "/favicon-light.ico";
-export const FAVICON_DARK_PATH = "/favicon-dark.ico";
-export const THEME_FAVICON_LINK_ID = "textbooked-theme-favicon";
-
-export type ThemeMode = "light" | "dark";
+import {
+  FAVICON_DARK_PATH,
+  FAVICON_LIGHT_PATH,
+  THEME_FAVICON_LINK_ID,
+  THEME_STORAGE_KEY,
+} from "@/lib/theme/consts";
+import type { ThemeMode } from "@/lib/theme/types";
 
 export function normalizeTheme(value: unknown): ThemeMode {
   return value === "dark" ? "dark" : "light";

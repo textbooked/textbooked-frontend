@@ -1,71 +1,26 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Compass, Home, LibraryBig, Menu, Network } from "lucide-react";
 import type {
-  ComponentType,
   MutableRefObject,
   PointerEvent as ReactPointerEvent,
 } from "react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 
 import { AvatarMenu } from "@/components/navigation/avatar-menu";
+import {
+  DRAG_ACTIVATION_DISTANCE_PX,
+  DRAG_PREVIEW_HOLD_MS,
+  INDICATOR_SCALE_DRAG,
+  INDICATOR_SCALE_SLIDE,
+  INDICATOR_SLIDE_ANIMATION_MS,
+  MOBILE_DOCK_TABS,
+  MOBILE_DOCK_TAB_COUNT,
+  POINTER_CLICK_SUPPRESS_MS,
+} from "@/components/navigation/mobile-nav/consts";
 import { MobileNavSheet } from "@/components/navigation/mobile-nav-sheet";
+import type { NavIconComponent } from "@/components/navigation/mobile-nav/types";
 import { cn } from "@/lib/utils";
-
-type RouteTab = {
-  kind: "route";
-  href: string;
-  label: string;
-  icon: ComponentType<{ className?: string }>;
-  match: (pathname: string) => boolean;
-};
-
-type ActionTab = {
-  kind: "action";
-  id: "menu";
-  label: string;
-  icon: ComponentType<{ className?: string }>;
-};
-
-type BottomTab = RouteTab | ActionTab;
-
-const MOBILE_DOCK_TABS: readonly BottomTab[] = [
-  {
-    kind: "route",
-    href: "/",
-    label: "Home",
-    icon: Home,
-    match: (currentPathname: string) => currentPathname === "/",
-  },
-  {
-    kind: "route",
-    href: "/library",
-    label: "Library",
-    icon: LibraryBig,
-    match: (currentPathname: string) => currentPathname.startsWith("/library"),
-  },
-  {
-    kind: "route",
-    href: "/knowledge-graph",
-    label: "Graph",
-    icon: Network,
-    match: (currentPathname: string) => currentPathname.startsWith("/knowledge-graph"),
-  },
-  {
-    kind: "route",
-    href: "/explore",
-    label: "Explore",
-    icon: Compass,
-    match: (currentPathname: string) => currentPathname.startsWith("/explore"),
-  },
-  {
-    kind: "action",
-    id: "menu",
-    label: "Menu",
-    icon: Menu,
-  },
-] as const;
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -98,7 +53,7 @@ export function MobileBottomNav() {
   const hasActiveTab = activeTabIndex >= 0;
   const displayActiveIndex = dragPreviewIndex ?? activeTabIndex;
   const activeIndicatorLeftPercent =
-    displayActiveIndex >= 0 ? (displayActiveIndex * 100) / MOBILE_DOCK_TABS.length : 0;
+    displayActiveIndex >= 0 ? (displayActiveIndex * 100) / MOBILE_DOCK_TAB_COUNT : 0;
 
   useEffect(() => {
     return () => {
@@ -135,7 +90,7 @@ export function MobileBottomNav() {
     indicatorSlideTimerRef.current = window.setTimeout(() => {
       setIsIndicatorSliding(false);
       indicatorSlideTimerRef.current = null;
-    }, 220);
+    }, INDICATOR_SLIDE_ANIMATION_MS);
 
     return () => {
       window.cancelAnimationFrame(frameId);
@@ -162,7 +117,7 @@ export function MobileBottomNav() {
     }
 
     const rect = track.getBoundingClientRect();
-    const tabCount = MOBILE_DOCK_TABS.length;
+    const tabCount = MOBILE_DOCK_TAB_COUNT;
     const tabWidth = rect.width / tabCount;
     if (tabWidth <= 0) {
       return null;
@@ -209,7 +164,7 @@ export function MobileBottomNav() {
     releaseCleanupTimerRef.current = window.setTimeout(() => {
       suppressPointerClickRef.current = false;
       releaseCleanupTimerRef.current = null;
-    }, 50);
+    }, POINTER_CLICK_SUPPRESS_MS);
   };
 
   const handleNavPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
@@ -250,7 +205,7 @@ export function MobileBottomNav() {
     const startX = pointerStartXRef.current;
     const moveDistance = startX == null ? 0 : Math.abs(event.clientX - startX);
 
-    if (!dragActivatedRef.current && moveDistance >= 8) {
+    if (!dragActivatedRef.current && moveDistance >= DRAG_ACTIVATION_DISTANCE_PX) {
       dragActivatedRef.current = true;
       setIsDragging(true);
       setIsIndicatorSliding(false);
@@ -293,7 +248,7 @@ export function MobileBottomNav() {
           setDragPreviewIndex(null);
           setDragIndicatorLeftPercent(null);
           dragPreviewCleanupTimerRef.current = null;
-        }, 260);
+        }, DRAG_PREVIEW_HOLD_MS);
 
         commitTabSelection(targetIndex);
       }
@@ -341,7 +296,11 @@ export function MobileBottomNav() {
     commitTabSelection(index);
   };
 
-  const indicatorScaleY = isDragging ? 0.94 : isIndicatorSliding ? 0.965 : 1;
+  const indicatorScaleY = isDragging
+    ? INDICATOR_SCALE_DRAG
+    : isIndicatorSliding
+      ? INDICATOR_SCALE_SLIDE
+      : 1;
 
   return (
     <>
@@ -426,7 +385,7 @@ export function MobileBottomNav() {
 
 type MobileRouteTabLinkProps = {
   label: string;
-  icon: ComponentType<{ className?: string }>;
+  icon: NavIconComponent;
   isActive: boolean;
   onActivate: () => void;
   suppressPointerClickRef: MutableRefObject<boolean>;
@@ -470,7 +429,7 @@ const MobileRouteTabLink = memo(function MobileRouteTabLink({
 
 type MobileActionTabButtonProps = {
   label: string;
-  icon: ComponentType<{ className?: string }>;
+  icon: NavIconComponent;
   isActive: boolean;
   onActivate: () => void;
   suppressPointerClickRef: MutableRefObject<boolean>;

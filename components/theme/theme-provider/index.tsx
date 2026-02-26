@@ -7,29 +7,22 @@ import {
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
 } from "react";
 
 import {
   applyThemeToDocument,
   getThemeFaviconHref,
   readStoredTheme,
-  THEME_FAVICON_LINK_ID,
-  type ThemeMode,
   writeStoredTheme,
 } from "@/lib/theme/theme";
-
-type ThemeContextValue = {
-  theme: ThemeMode;
-  setTheme: (theme: ThemeMode) => void;
-  toggleTheme: () => void;
-};
+import { THEME_FAVICON_LINK_ID } from "@/lib/theme/consts";
+import type { ThemeMode } from "@/lib/theme/types";
+import type {
+  ThemeContextValue,
+  ThemeProviderProps,
+} from "@/components/theme/theme-provider/types";
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
-
-type ThemeProviderProps = {
-  children: ReactNode;
-};
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<ThemeMode>(() => readStoredTheme());

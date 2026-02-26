@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
 import { themeFonts } from "@/lib/theme/fonts";
+import { THEME_FAVICON_LINK_ID } from "@/lib/theme/consts";
 import {
   buildThemeInitScript,
   getThemeFaviconHref,
-  THEME_FAVICON_LINK_ID,
 } from "@/lib/theme/theme";
 import AppProviders from "@/providers/app-providers";
 

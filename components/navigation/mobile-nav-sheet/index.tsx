@@ -2,16 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BookPlus,
-  Compass,
-  Home,
-  LibraryBig,
-  Network,
-  Sparkles,
-} from "lucide-react";
-import type { ComponentType } from "react";
 
+import {
+  MOBILE_NAV_SHEET_ITEMS,
+  MOBILE_NAV_SHORTCUT_ITEMS,
+} from "@/components/navigation/mobile-nav/consts";
+import type { NavIconComponent } from "@/components/navigation/mobile-nav/types";
 import {
   Sheet,
   SheetContent,
@@ -25,55 +21,6 @@ type MobileNavSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
-
-type NavLinkItem = {
-  href: string;
-  label: string;
-  icon: ComponentType<{ className?: string }>;
-  match: (pathname: string) => boolean;
-};
-
-const NAV_ITEMS: NavLinkItem[] = [
-  {
-    href: "/",
-    label: "Home",
-    icon: Home,
-    match: (pathname) => pathname === "/",
-  },
-  {
-    href: "/library",
-    label: "Library",
-    icon: LibraryBig,
-    match: (pathname) => pathname.startsWith("/library"),
-  },
-  {
-    href: "/knowledge-graph",
-    label: "Knowledge Graph",
-    icon: Network,
-    match: (pathname) => pathname.startsWith("/knowledge-graph"),
-  },
-  {
-    href: "/explore",
-    label: "Explore",
-    icon: Compass,
-    match: (pathname) => pathname.startsWith("/explore"),
-  },
-];
-
-const SHORTCUT_ITEMS: NavLinkItem[] = [
-  {
-    href: "/onboarding",
-    label: "Create Study Plan",
-    icon: Sparkles,
-    match: (pathname) => pathname.startsWith("/onboarding"),
-  },
-  {
-    href: "/books/new",
-    label: "Add Book",
-    icon: BookPlus,
-    match: (pathname) => pathname.startsWith("/books/new"),
-  },
-];
 
 export function MobileNavSheet({
   open,
@@ -98,7 +45,7 @@ export function MobileNavSheet({
                 Navigate
               </p>
               <div className="space-y-1.5">
-                {NAV_ITEMS.map((item) => (
+                {MOBILE_NAV_SHEET_ITEMS.map((item) => (
                   <SheetNavRow
                     key={item.href}
                     href={item.href}
@@ -116,7 +63,7 @@ export function MobileNavSheet({
                 Shortcuts
               </p>
               <div className="space-y-1.5">
-                {SHORTCUT_ITEMS.map((item) => (
+                {MOBILE_NAV_SHORTCUT_ITEMS.map((item) => (
                   <SheetNavRow
                     key={item.href}
                     href={item.href}
@@ -138,7 +85,7 @@ export function MobileNavSheet({
 type SheetNavRowProps = {
   href: string;
   label: string;
-  icon: ComponentType<{ className?: string }>;
+  icon: NavIconComponent;
   active: boolean;
   onNavigate: () => void;
 };
