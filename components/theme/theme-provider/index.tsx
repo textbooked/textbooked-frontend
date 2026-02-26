@@ -12,7 +12,9 @@ import {
 
 import {
   applyThemeToDocument,
+  getThemeFaviconHref,
   readStoredTheme,
+  THEME_FAVICON_LINK_ID,
   type ThemeMode,
   writeStoredTheme,
 } from "@/lib/theme/theme";
@@ -34,8 +36,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   useEffect(() => {
     applyThemeToDocument(theme);
+  }, [theme]);
+
+  useEffect(() => {
     writeStoredTheme(theme);
   }, [theme]);
+
+  useThemeFaviconSync(theme);
 
   const setTheme = useCallback((nextTheme: ThemeMode) => {
     setThemeState(nextTheme);
@@ -55,6 +62,22 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
+function useThemeFaviconSync(theme: ThemeMode) {
+  useEffect(() => {
+    const link = document.getElementById(THEME_FAVICON_LINK_ID) as HTMLLinkElement | null;
+    if (!link) {
+      return;
+    }
+
+    const href = getThemeFaviconHref(theme);
+    if (link.getAttribute("href") === href) {
+      return;
+    }
+
+    link.setAttribute("href", href);
+  }, [theme]);
 }
 
 export function useTheme(): ThemeContextValue {
