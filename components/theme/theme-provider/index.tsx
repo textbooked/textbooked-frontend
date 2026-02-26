@@ -13,10 +13,10 @@ import {
   applyThemeToDocument,
   getThemeFaviconHref,
   readStoredTheme,
+  THEME_FAVICON_LINK_ID,
+  type ThemeMode,
   writeStoredTheme,
-} from "@/lib/theme/theme";
-import { THEME_FAVICON_LINK_ID } from "@/lib/theme/consts";
-import type { ThemeMode } from "@/lib/theme/types";
+} from "@/lib/theme";
 import type {
   ThemeContextValue,
   ThemeProviderProps,

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import type { ThemeMode } from "@/lib/theme/types";
+import type { ThemeMode } from "@/lib/theme";
 
 export type ThemeContextValue = {
   theme: ThemeMode;

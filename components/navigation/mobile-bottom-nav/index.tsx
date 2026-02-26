@@ -16,10 +16,10 @@ import {
   INDICATOR_SLIDE_ANIMATION_MS,
   MOBILE_DOCK_TABS,
   MOBILE_DOCK_TAB_COUNT,
+  type NavIconComponent,
   POINTER_CLICK_SUPPRESS_MS,
-} from "@/components/navigation/mobile-nav/consts";
+} from "@/components/navigation/mobile-nav";
 import { MobileNavSheet } from "@/components/navigation/mobile-nav-sheet";
-import type { NavIconComponent } from "@/components/navigation/mobile-nav/types";
 import { cn } from "@/lib/utils";
 
 export function MobileBottomNav() {

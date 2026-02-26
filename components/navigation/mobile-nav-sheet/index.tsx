@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import {
   MOBILE_NAV_SHEET_ITEMS,
   MOBILE_NAV_SHORTCUT_ITEMS,
-} from "@/components/navigation/mobile-nav/consts";
-import type { NavIconComponent } from "@/components/navigation/mobile-nav/types";
+  type NavIconComponent,
+} from "@/components/navigation/mobile-nav";
 import {
   Sheet,
   SheetContent,
