@@ -6,13 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SourceType = typeof SourceType[keyof typeof SourceType];
+export type CurrentAdminUserDtoRole = typeof CurrentAdminUserDtoRole[keyof typeof CurrentAdminUserDtoRole];
 
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SourceType = {
-  BOOK: 'BOOK',
-  PAPER: 'PAPER',
-  VIDEO: 'VIDEO',
-  WEB: 'WEB',
+export const CurrentAdminUserDtoRole = {
+  ADMIN: 'ADMIN',
+  SUPER_ADMIN: 'SUPER_ADMIN',
 } as const;

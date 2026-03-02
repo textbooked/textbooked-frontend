@@ -6,12 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type OnboardingLevel = typeof OnboardingLevel[keyof typeof OnboardingLevel];
+export type AdminSortDtoOrder = typeof AdminSortDtoOrder[keyof typeof AdminSortDtoOrder];
 
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const OnboardingLevel = {
-  BEGINNER: 'BEGINNER',
-  INTERMEDIATE: 'INTERMEDIATE',
-  ADVANCED: 'ADVANCED',
+export const AdminSortDtoOrder = {
+  ASC: 'ASC',
+  DESC: 'DESC',
 } as const;
