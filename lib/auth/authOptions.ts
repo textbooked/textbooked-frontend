@@ -39,10 +39,9 @@ export const authOptions: NextAuthOptions = {
         throw new Error("Google profile is missing required claims (sub/email).");
       }
 
-      const apiJwtSecret =
-        process.env.BACKEND_JWT_SECRET ?? process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+      const apiJwtSecret = process.env.BACKEND_JWT_SECRET;
       if (!apiJwtSecret) {
-        throw new Error("Missing JWT secret. Set BACKEND_JWT_SECRET or AUTH_SECRET.");
+        throw new Error("Missing JWT secret. Set BACKEND_JWT_SECRET.");
       }
 
       const key = new TextEncoder().encode(apiJwtSecret);
@@ -87,7 +86,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
 
-  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 function resolveNonEmptyString(value: unknown): string | undefined {

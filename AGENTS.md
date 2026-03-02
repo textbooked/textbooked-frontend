@@ -39,14 +39,14 @@ Required for local/prod:
 
 - `NEXT_PUBLIC_BACKEND_URL`
 - `NEXT_PUBLIC_OPENAPI_PATH` (default expected: `/swagger-yaml`)
-- `AUTH_SECRET`
+- `NEXTAUTH_SECRET` (session)
+- `BACKEND_JWT_SECRET` (API token signing; must match backend `AUTH_JWT_SECRET`)
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `NEXTAUTH_URL` (required in production)
 
 Optional:
 
-- `BACKEND_JWT_SECRET` (if not set, backend token signing falls back to `AUTH_SECRET`)
 
 ## Repository Layout
 
