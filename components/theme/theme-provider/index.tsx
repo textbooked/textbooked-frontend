@@ -7,35 +7,35 @@ import {
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
 } from "react";
 
 import {
   applyThemeToDocument,
+  getThemeFaviconHref,
   readStoredTheme,
+  THEME_FAVICON_LINK_ID,
   type ThemeMode,
   writeStoredTheme,
-} from "@/lib/theme/theme";
-
-type ThemeContextValue = {
-  theme: ThemeMode;
-  setTheme: (theme: ThemeMode) => void;
-  toggleTheme: () => void;
-};
+} from "@/lib/theme";
+import type {
+  ThemeContextValue,
+  ThemeProviderProps,
+} from "@/components/theme/theme-provider/types";
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
-
-type ThemeProviderProps = {
-  children: ReactNode;
-};
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<ThemeMode>(() => readStoredTheme());
 
   useEffect(() => {
     applyThemeToDocument(theme);
+  }, [theme]);
+
+  useEffect(() => {
     writeStoredTheme(theme);
   }, [theme]);
+
+  useThemeFaviconSync(theme);
 
   const setTheme = useCallback((nextTheme: ThemeMode) => {
     setThemeState(nextTheme);
@@ -55,6 +55,22 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
+function useThemeFaviconSync(theme: ThemeMode) {
+  useEffect(() => {
+    const link = document.getElementById(THEME_FAVICON_LINK_ID) as HTMLLinkElement | null;
+    if (!link) {
+      return;
+    }
+
+    const href = getThemeFaviconHref(theme);
+    if (link.getAttribute("href") === href) {
+      return;
+    }
+
+    link.setAttribute("href", href);
+  }, [theme]);
 }
 
 export function useTheme(): ThemeContextValue {

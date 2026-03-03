@@ -6,19 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
-  CreateOnboardingStudyPlanRequestDto,
-  CreateOnboardingStudyPlanResponseDto,
   CurrentUserDto,
   HealthGetHealth200,
-  OnboardingStatusDto,
   RepaceStudyPlanRequestDto,
   RepaceStudyPlanResponseDto
 } from '../schemas';
 
 import authGetMeMutator from '../axios';
-import onboardingGetStatusMutator from '../axios';
-import onboardingCreateStudyPlanMutator from '../axios';
-import studyPlansRepaceMutator from '../axios';
+import studyPlanRepaceMutator from '../axios';
 import healthGetHealthMutator from '../axios';
 
 
@@ -36,39 +31,13 @@ const authGetMe = (
     }
   
 /**
- * @summary Get onboarding state for the authenticated user
- */
-const onboardingGetStatus = (
-    
- options?: SecondParameter<typeof onboardingGetStatusMutator>,) => {
-      return onboardingGetStatusMutator<OnboardingStatusDto>(
-      {url: `/onboarding/status`, method: 'GET'
-    },
-      options);
-    }
-  
-/**
- * @summary Create first study plan from onboarding wizard input
- */
-const onboardingCreateStudyPlan = (
-    createOnboardingStudyPlanRequestDto: CreateOnboardingStudyPlanRequestDto,
- options?: SecondParameter<typeof onboardingCreateStudyPlanMutator>,) => {
-      return onboardingCreateStudyPlanMutator<CreateOnboardingStudyPlanResponseDto>(
-      {url: `/onboarding/study-plans`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: createOnboardingStudyPlanRequestDto
-    },
-      options);
-    }
-  
-/**
  * @summary Repace unfinished learning units without touching completed progress
  */
-const studyPlansRepace = (
+const studyPlanRepace = (
     id: string,
     repaceStudyPlanRequestDto: RepaceStudyPlanRequestDto,
- options?: SecondParameter<typeof studyPlansRepaceMutator>,) => {
-      return studyPlansRepaceMutator<RepaceStudyPlanResponseDto>(
+ options?: SecondParameter<typeof studyPlanRepaceMutator>,) => {
+      return studyPlanRepaceMutator<RepaceStudyPlanResponseDto>(
       {url: `/study-plans/${id}/repace`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: repaceStudyPlanRequestDto
@@ -88,9 +57,7 @@ const healthGetHealth = (
       options);
     }
   
-return {authGetMe,onboardingGetStatus,onboardingCreateStudyPlan,studyPlansRepace,healthGetHealth}};
+return {authGetMe,studyPlanRepace,healthGetHealth}};
 export type AuthGetMeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getTextbookedBackendAPI>['authGetMe']>>>
-export type OnboardingGetStatusResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getTextbookedBackendAPI>['onboardingGetStatus']>>>
-export type OnboardingCreateStudyPlanResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getTextbookedBackendAPI>['onboardingCreateStudyPlan']>>>
-export type StudyPlansRepaceResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getTextbookedBackendAPI>['studyPlansRepace']>>>
+export type StudyPlanRepaceResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getTextbookedBackendAPI>['studyPlanRepace']>>>
 export type HealthGetHealthResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getTextbookedBackendAPI>['healthGetHealth']>>>

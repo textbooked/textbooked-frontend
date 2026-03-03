@@ -5,10 +5,8 @@
  * Backend MVP API for textbook study planning and grading.
  * OpenAPI spec version: 1.0.0
  */
-import type { SourceType } from './sourceType';
+import type { AdminCreateDtoData } from './adminCreateDtoData';
 
-export interface OnboardingSourceInputDto {
-  type: SourceType;
-  title: string;
-  uri: string;
+export interface AdminCreateDto {
+  data: AdminCreateDtoData;
 }

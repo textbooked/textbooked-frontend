@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 
 import { themeFonts } from "@/lib/theme/fonts";
-import { buildThemeInitScript } from "@/lib/theme/theme";
+import {
+  buildThemeInitScript,
+  getThemeFaviconHref,
+  THEME_FAVICON_LINK_ID,
+} from "@/lib/theme";
 import AppProviders from "@/providers/app-providers";
 
 import "./globals.css";
@@ -21,6 +25,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link
+          id={THEME_FAVICON_LINK_ID}
+          rel="icon"
+          type="image/x-icon"
+          href={getThemeFaviconHref("light")}
+        />
         <script
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />

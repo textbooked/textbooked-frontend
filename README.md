@@ -17,24 +17,21 @@ Create `.env.local`:
 ```bash
 NEXT_PUBLIC_BACKEND_URL=https://api.textbooked.hofcoral.com
 NEXT_PUBLIC_OPENAPI_PATH=/swagger-yaml
-AUTH_SECRET=change-me-to-a-long-random-secret
+NEXTAUTH_SECRET=change-me-to-a-long-random-secret
+BACKEND_JWT_SECRET=change-me-to-a-long-random-secret
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-# Optional override for backend JWT signing
-# BACKEND_JWT_SECRET=change-me
 # Optional in production
 # NEXTAUTH_URL=https://your-frontend-domain.com
-# AUTH_URL=https://your-frontend-domain.com
 # AUTH_TRUST_HOST=true
 ```
 
 Notes:
-- `AUTH_SECRET` is used by Auth.js.
-- Set `AUTH_URL` to your public frontend URL (for example your nginx domain).
+- `NEXTAUTH_SECRET` is used by Auth.js for the session cookie/JWE.
+- Set `NEXTAUTH_URL` to your public frontend URL (for example your nginx domain).
 - Set `AUTH_TRUST_HOST=true` behind reverse proxies so Auth.js uses forwarded host/proto headers.
 - Backend JWTs are signed with HS256 in the frontend auth callback.
-- By default, backend JWT signing uses `BACKEND_JWT_SECRET` if set, else `AUTH_SECRET`.
-- For backend verification, use the same shared secret value on backend side.
+- Backend `apiToken` signing uses `BACKEND_JWT_SECRET` which must match backend `AUTH_JWT_SECRET`.
 
 ## Scripts
 

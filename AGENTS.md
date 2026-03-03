@@ -16,6 +16,8 @@ Guidance for coding agents working in this repository.
 - Do not call backend endpoints with raw `fetch` from pages/components.
 - Route all API calls through `lib/api/*` domain functions.
 - Keep changes minimal and focused; avoid overengineering.
+- Use named `const`s for magic numbers/strings and extract shared config into `consts.ts` once a file grows beyond simple local usage.
+- Extract non-trivial shared types into colocated `types.ts` (or feature-level `types.ts`) instead of redefining them in multiple files.
 - Never commit secrets (`.env`, OAuth secrets, tokens).
 
 ## Common Commands
@@ -37,14 +39,14 @@ Required for local/prod:
 
 - `NEXT_PUBLIC_BACKEND_URL`
 - `NEXT_PUBLIC_OPENAPI_PATH` (default expected: `/swagger-yaml`)
-- `AUTH_SECRET`
+- `NEXTAUTH_SECRET` (session)
+- `BACKEND_JWT_SECRET` (API token signing; must match backend `AUTH_JWT_SECRET`)
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `NEXTAUTH_URL` (required in production)
 
 Optional:
 
-- `BACKEND_JWT_SECRET` (if not set, backend token signing falls back to `AUTH_SECRET`)
 
 ## Repository Layout
 
@@ -65,6 +67,7 @@ Optional:
   - `app/**/hooks`
   - `app/**/lib`
   - `app/**/types.ts`
+- For reusable shared components/features, prefer `consts.ts` and `types.ts` once config/types exceed simple local usage.
 - Keep components minimal by default (`index.tsx` only when enough).
 - Use `createComponent` selectively for complex reusable components only.
 - `style.ts` is optional and should be used only for reusable CVA/tokens.
